@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Daily Diary</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.6.0/dist/tabler-icons.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f5f5f7;
+      --surface: #ffffff;
+      --surface2: #f0f0f2;
+      --border: rgba(0,0,0,0.10);
+      --border2: rgba(0,0,0,0.18);
+      --text: #1a1a1e;
+      --text2: #6b6b75;
+      --text3: #aeaeb8;
+      --accent: #3a5af5;
+      --accent-bg: #eef1fe;
+      --green: #3a9e6e;
+      --green-bg: #e6f7ef;
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f0f12;
+        --surface: #1c1c22;
+        --surface2: #26262e;
+        --border: rgba(255,255,255,0.08);
+        --border2: rgba(255,255,255,0.16);
+        --text: #f0f0f4;
+        --text2: #9090a0;
+        --text3: #55555f;
+        --accent-bg: #1a2050;
+        --green-bg: #0d2e1e;
+      }
+    }
+
+    html, body {
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    #app {
+      max-width: 430px;
+      margin: 0 auto;
+      min-height: 100%;
+      background: var(--bg);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Screens ── */
+    .screen { display: none; flex: 1; flex-direction: column; overflow-y: auto; padding-bottom: 70px; }
+    .screen.active { display: flex; }
+
+    /* ── Nav bar ── */
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px 12px;
+      background: var(--surface);
+      border-bottom: 0.5px solid var(--border);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .topbar-title { font-size: 17px; font-weight: 600; color: var(--text); }
+    .topbar-btn {
+      background: none; border: none; cursor: pointer;
+      color: var(--text2); font-size: 22px;
+      display: flex; align-items: center; padding: 4px;
+      border-radius: 6px; transition: background 0.15s;
+    }
+    .topbar-btn:hover { background: var(--surface2); }
+    .topbar-back { color: var(--accent); font-size: 15px; font-weight: 500; display: flex; align-items: center; gap: 3px; }
+
+    /* ── Bottom tab bar ── */
+    .tabbar {
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 430px;
+      display: flex;
+      background: var(--surface);
+      border-top: 0.5px solid var(--border);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .tab {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      padding: 10px 0 8px; gap: 3px; cursor: pointer;
+      background: none; border: none;
+      color: var(--text3); font-size: 10px; font-weight: 500;
+      transition: color 0.15s;
+    }
+    .tab i { font-size: 22px; }
+    .tab.active { color: var(--accent); }
+
+    /* ── Lock screen widget ── */
+    .ls-wrap {
+      margin: 16px;
+      background: var(--surface2);
+      border-radius: 18px;
+      padding: 12px;
+    }
+    .ls-badge {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 11px; color: var(--text2); margin-bottom: 8px; font-weight: 500;
+    }
+    .ls-badge i { font-size: 13px; }
+    .lockscreen {
+      border-radius: 14px;
+      padding: 20px 16px 16px;
+      color: #fff;
+      min-height: 200px;
+    }
+    .ls-time {
+      font-size: 48px; font-weight: 200; text-align: center;
+      letter-spacing: -2px; color: #fff; line-height: 1;
+    }
+    .ls-date {
+      font-size: 14px; text-align: center;
+      color: rgba(255,255,255,0.7); margin: 4px 0 14px;
+    }
+    .ls-card {
+      background: rgba(255,255,255,0.14);
+      border-radius: 14px; padding: 10px 12px;
+    }
+    .ls-card-title {
+      font-size: 11px; color: rgba(255,255,255,0.6);
+      text-transform: uppercase; letter-spacing: 0.6px;
+      margin-bottom: 8px; display: flex; align-items: center; gap: 5px;
+    }
+    .ls-card-title i { font-size: 13px; }
+    .ls-task-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 3px 0; font-size: 13px; color: rgba(255,255,255,0.9);
+    }
+    .ls-task-row.done { color: rgba(255,255,255,0.38); text-decoration: line-through; }
+    .ls-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .ls-dot.work   { background: #7a9cff; }
+    .ls-dot.personal { background: #7deba8; }
+    .ls-dot.health { background: #ffb057; }
+    .ls-dot.faded  { background: rgba(255,255,255,0.28); }
+    .ls-bar-row {
+      display: flex; align-items: center; gap: 8px; margin-top: 10px;
+    }
+    .ls-bar { flex: 1; height: 3px; background: rgba(255,255,255,0.18); border-radius: 99px; overflow: hidden; }
+    .ls-bar-fill { height: 100%; background: #7deba8; border-radius: 99px; transition: width 0.4s; }
+    .ls-bar-label { font-size: 11px; color: rgba(255,255,255,0.55); white-space: nowrap; }
+
+    /* ── Progress card ── */
+    .prog-card {
+      margin: 0 16px 16px;
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .ring-wrap { position: relative; width: 48px; height: 48px; flex-shrink: 0; }
+    .ring-wrap svg { transform: rotate(-90deg); }
+    .ring-pct {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 600; color: var(--text);
+    }
+    .prog-info { flex: 1; }
+    .prog-count { font-size: 22px; font-weight: 600; color: var(--text); line-height: 1.2; }
+    .prog-label { font-size: 13px; color: var(--text2); margin-top: 2px; }
+
+    /* ── Section ── */
+    .section { padding: 0 16px; }
+    .section-label {
+      font-size: 12px; color: var(--text2); font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+
+    /* ── Task items ── */
+    .task-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 14px;
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: opacity 0.2s, border-color 0.15s;
+    }
+    .task-item:hover { border-color: var(--border2); }
+    .task-item.done { opacity: 0.5; }
+    .task-check {
+      width: 20px; height: 20px; border-radius: 50%;
+      border: 1.5px solid var(--border2);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: all 0.2s;
+    }
+    .task-check.checked { background: var(--green); border-color: var(--green); }
+    .task-check.checked i { color: #fff; font-size: 12px; }
+    .task-text { flex: 1; font-size: 15px; color: var(--text); }
+    .task-item.done .task-text { text-decoration: line-through; color: var(--text2); }
+    .task-tag {
+      font-size: 11px; font-weight: 600; padding: 3px 9px;
+      border-radius: 99px;
+    }
+    .tag-work     { background: #dde5ff; color: #2a3daa; }
+    .tag-personal { background: #d4f5e2; color: #166040; }
+    .tag-health   { background: #fde8cc; color: #7a3e00; }
+    @media (prefers-color-scheme: dark) {
+      .tag-work     { background: #1e2a66; color: #99aaff; }
+      .tag-personal { background: #0e3020; color: #6ddfa0; }
+      .tag-health   { background: #3a2000; color: #ffb866; }
+    }
+    .task-del {
+      background: none; border: none; cursor: pointer;
+      color: var(--text3); font-size: 18px;
+      padding: 2px; opacity: 0; transition: opacity 0.15s;
+    }
+    .task-item:hover .task-del { opacity: 1; }
+
+    /* ── Empty state ── */
+    .empty {
+      text-align: center; padding: 32px 0;
+      color: var(--text2); font-size: 14px;
+    }
+    .empty i { font-size: 36px; display: block; margin-bottom: 10px; color: var(--text3); }
+
+    /* ── Add form ── */
+    .add-wrap { padding: 16px; }
+    .add-card {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      margin-bottom: 20px;
+    }
+    .add-input {
+      width: 100%; font-size: 16px; border: none; outline: none;
+      background: transparent; color: var(--text);
+      margin-bottom: 12px; line-height: 1.5;
+    }
+    .add-input::placeholder { color: var(--text3); }
+    .cat-row { display: flex; gap: 8px; align-items: center; }
+    .cat-btn {
+      font-size: 12px; font-weight: 600; padding: 5px 12px;
+      border-radius: 99px;
+      border: 0.5px solid var(--border2);
+      background: var(--surface2);
+      color: var(--text2);
+      cursor: pointer; transition: all 0.15s;
+    }
+    .cat-btn.sel-work     { background: #dde5ff; color: #2a3daa; border-color: transparent; }
+    .cat-btn.sel-personal { background: #d4f5e2; color: #166040; border-color: transparent; }
+    .cat-btn.sel-health   { background: #fde8cc; color: #7a3e00; border-color: transparent; }
+    @media (prefers-color-scheme: dark) {
+      .cat-btn.sel-work     { background: #1e2a66; color: #99aaff; }
+      .cat-btn.sel-personal { background: #0e3020; color: #6ddfa0; }
+      .cat-btn.sel-health   { background: #3a2000; color: #ffb866; }
+    }
+    .add-btn {
+      margin-left: auto; font-size: 14px; font-weight: 600;
+      padding: 6px 18px; border-radius: var(--radius-sm);
+      background: var(--accent); color: #fff; border: none; cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .add-btn:active { opacity: 0.8; }
+
+    .quick-label { font-size: 12px; color: var(--text2); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+    .quick-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+    .quick-chip {
+      font-size: 13px; padding: 6px 14px; border-radius: 99px;
+      border: 0.5px solid var(--border2);
+      background: var(--surface);
+      color: var(--text2);
+      cursor: pointer; transition: background 0.15s;
+    }
+    .quick-chip:hover { background: var(--surface2); }
+
+    /* ── Settings ── */
+    .settings-wrap { padding: 16px; }
+    .settings-section { margin-bottom: 24px; }
+    .settings-section .section-label { margin-bottom: 12px; }
+    .theme-row { display: flex; gap: 10px; margin-bottom: 20px; }
+    .theme-card {
+      flex: 1; border-radius: 12px; padding: 12px 8px;
+      text-align: center; font-size: 12px; font-weight: 600;
+      color: #fff; cursor: pointer;
+      border: 2px solid transparent; transition: border-color 0.2s;
+    }
+    .theme-card.selected { border-color: var(--accent); }
+    .setting-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 0; border-bottom: 0.5px solid var(--border);
+    }
+    .setting-row:last-child { border-bottom: none; }
+    .setting-label { font-size: 15px; color: var(--text); }
+    .toggle-track {
+      width: 40px; height: 24px; border-radius: 99px;
+      background: var(--border2); position: relative;
+      cursor: pointer; transition: background 0.2s;
+    }
+    .toggle-track.on { background: var(--green); }
+    .toggle-thumb {
+      position: absolute; top: 3px; left: 3px;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: #fff; transition: transform 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    .toggle-track.on .toggle-thumb { transform: translateX(16px); }
+    .setting-select {
+      font-size: 14px; background: var(--surface2);
+      color: var(--text); border: 0.5px solid var(--border2);
+      border-radius: var(--radius-sm); padding: 4px 10px;
+      outline: none; cursor: pointer;
+    }
+    .danger-btn {
+      width: 100%; padding: 12px;
+      font-size: 15px; font-weight: 600;
+      color: #c0392b; background: none;
+      border: 0.5px solid rgba(192,57,43,0.3);
+      border-radius: var(--radius-sm); cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: background 0.15s;
+    }
+    .danger-btn:hover { background: rgba(192,57,43,0.07); }
+
+    /* ── iOS-style stat row ── */
+    .stat-row { display: flex; gap: 10px; margin: 0 16px 16px; }
+    .stat-card {
+      flex: 1; background: var(--surface); border: 0.5px solid var(--border);
+      border-radius: var(--radius-sm); padding: 10px 12px;
+    }
+    .stat-num { font-size: 20px; font-weight: 700; color: var(--text); }
+    .stat-lbl { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HOME SCREEN -->
+  <div class="screen active" id="home-screen">
+    <div class="topbar">
+      <span class="topbar-title">My Diary</span>
+      <button class="topbar-btn" onclick="goTo('add-screen')" aria-label="Add plan">
+        <i class="ti ti-plus"></i>
+      </button>
+    </div>
+
+    <!-- Lock screen widget -->
+    <div class="ls-wrap">
+      <div class="ls-badge"><i class="ti ti-lock"></i> Lock screen preview</div>
+      <div class="lockscreen" id="ls-bg" style="background:#1a1a2e;">
+        <div class="ls-time" id="ls-clock">--:--</div>
+        <div class="ls-date" id="ls-date">Wednesday, June 10</div>
+        <div class="ls-card">
+          <div class="ls-card-title"><i class="ti ti-clipboard-list"></i> Today's plans</div>
+          <div id="ls-preview"></div>
+          <div class="ls-bar-row">
+            <div class="ls-bar"><div class="ls-bar-fill" id="ls-fill" style="width:0%"></div></div>
+            <span class="ls-bar-label" id="ls-stat">0 / 0 done</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats row -->
+    <div class="stat-row">
+      <div class="stat-card">
+        <div class="stat-num" id="stat-total">0</div>
+        <div class="stat-lbl">Total plans</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-done">0</div>
+        <div class="stat-lbl">Completed</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-left">0</div>
+        <div class="stat-lbl">Remaining</div>
+      </div>
+    </div>
+
+    <!-- Progress ring -->
+    <div class="prog-card">
+      <div class="ring-wrap">
+        <svg width="48" height="48" viewBox="0 0 48 48">
+          <circle cx="24" cy="24" r="18" fill="none" stroke="var(--border2)" stroke-width="4"/>
+          <circle cx="24" cy="24" r="18" fill="none" stroke="#3a9e6e" stroke-width="4"
+            stroke-dasharray="113.1" id="ring-arc" stroke-dashoffset="113.1" stroke-linecap="round"/>
+        </svg>
+        <div class="ring-pct" id="ring-pct">0%</div>
+      </div>
+      <div class="prog-info">
+        <div class="prog-count" id="prog-count">0 done</div>
+        <div class="prog-label" id="prog-label">Add plans to get started</div>
+      </div>
+    </div>
+
+    <!-- Task list -->
+    <div class="section">
+      <div class="section-label">Today's plans</div>
+      <div id="task-list"></div>
+      <div id="empty-state" class="empty">
+        <i class="ti ti-notes"></i>
+        No plans yet — tap + to add one
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD SCREEN -->
+  <div class="screen" id="add-screen">
+    <div class="topbar">
+      <button class="topbar-btn topbar-back" onclick="goTo('home-screen')">
+        <i class="ti ti-chevron-left"></i> Back
+      </button>
+      <span class="topbar-title">Add Plan</span>
+      <span style="width:60px"></span>
+    </div>
+    <div class="add-wrap">
+      <div class="add-card">
+        <input class="add-input" id="task-input" type="text"
+          placeholder="What's your plan for today?" maxlength="70"
+          onkeydown="if(event.key==='Enter') addTask()" />
+        <div class="cat-row">
+          <button class="cat-btn sel-work" id="cat-work" onclick="selectCat('work')">Work</button>
+          <button class="cat-btn" id="cat-personal" onclick="selectCat('personal')">Personal</button>
+          <button class="cat-btn" id="cat-health" onclick="selectCat('health')">Health</button>
+          <button class="add-btn" onclick="addTask()">Add</button>
+        </div>
+      </div>
+      <div class="quick-label">Quick add</div>
+      <div class="quick-grid" id="quick-grid"></div>
+    </div>
+  </div>
+
+  <!-- SETTINGS SCREEN -->
+  <div class="screen" id="settings-screen">
+    <div class="topbar">
+      <span class="topbar-title">Settings</span>
+    </div>
+    <div class="settings-wrap">
+      <div class="settings-section">
+        <div class="section-label">Widget theme</div>
+        <div class="theme-row">
+          <div class="theme-card selected" id="th-dark" style="background:#1a1a2e;" onclick="setTheme('dark','#1a1a2e','th-dark')">Dark</div>
+          <div class="theme-card" id="th-forest" style="background:#1a3a2a;" onclick="setTheme('forest','#1a3a2a','th-forest')">Forest</div>
+          <div class="theme-card" id="th-midnight" style="background:#0c1e3e;" onclick="setTheme('midnight','#0c1e3e','th-midnight')">Midnight</div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="section-label">Lock screen display</div>
+        <div class="setting-row">
+          <span class="setting-label">Show pending tasks only</span>
+          <div class="toggle-track" id="toggle-pending" onclick="togglePending()">
+            <div class="toggle-thumb"></div>
+          </div>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Max tasks shown</span>
+          <select class="setting-select" onchange="maxShown=+this.value; render()">
+            <option value="3">3</option>
+            <option value="4" selected>4</option>
+            <option value="5">5</option>
+          </select>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="section-label">Data</div>
+        <button class="danger-btn" onclick="clearAll()">
+          <i class="ti ti-trash"></i> Clear all plans
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB BAR -->
+  <nav class="tabbar">
+    <button class="tab active" id="tab-home" onclick="goTo('home-screen', 'tab-home')">
+      <i class="ti ti-home"></i>Home
+    </button>
+    <button class="tab" id="tab-add" onclick="goTo('add-screen', 'tab-add')">
+      <i class="ti ti-circle-plus"></i>Add plan
+    </button>
+    <button class="tab" id="tab-settings" onclick="goTo('settings-screen', 'tab-settings')">
+      <i class="ti ti-adjustments"></i>Settings
+    </button>
+  </nav>
+
+</div>
+
+<script>
+  // ── State ──
+  let tasks = JSON.parse(localStorage.getItem('dd-tasks') || '[]');
+  let selectedCat = 'work';
+  let maxShown = 4;
+  let pendingOnly = false;
+  let lsBg = '#1a1a2e';
+
+  const quickSuggestions = [
+    { text: 'Morning run', cat: 'health' },
+    { text: 'Team meeting', cat: 'work' },
+    { text: 'Read 20 pages', cat: 'personal' },
+    { text: 'Drink 2L water', cat: 'health' },
+    { text: 'Reply emails', cat: 'work' },
+    { text: 'Grocery shopping', cat: 'personal' },
+    { text: 'Meditate 10 min', cat: 'health' },
+    { text: 'Review project', cat: 'work' },
+    { text: 'Call a friend', cat: 'personal' },
+    { text: 'Evening walk', cat: 'health' },
+  ];
+
+  // ── Navigation ──
+  function goTo(screenId, tabId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(screenId).classList.add('active');
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    const tabMap = { 'home-screen': 'tab-home', 'add-screen': 'tab-add', 'settings-screen': 'tab-settings' };
+    const tgt = tabId || tabMap[screenId];
+    if (tgt) document.getElementById(tgt).classList.add('active');
+    if (screenId === 'add-screen') {
+      setTimeout(() => document.getElementById('task-input').focus(), 100);
+    }
+  }
+
+  // ── Category selection ──
+  function selectCat(cat) {
+    selectedCat = cat;
+    ['work', 'personal', 'health'].forEach(c => {
+      const btn = document.getElementById('cat-' + c);
+      btn.className = 'cat-btn' + (c === cat ? ' sel-' + c : '');
+    });
+  }
+
+  // ── Add task ──
+  function addTask() {
+    const input = document.getElementById('task-input');
+    const text = input.value.trim();
+    if (!text) return;
+    tasks.push({ id: Date.now(), text, cat: selectedCat, done: false, createdAt: new Date().toISOString() });
+    save();
+    render();
+    input.value = '';
+    goTo('home-screen');
+  }
+
+  // ── Toggle done ──
+  function toggleTask(id) {
+    const t = tasks.find(t => t.id === id);
+    if (t) { t.done = !t.done; save(); render(); }
+  }
+
+  // ── Delete ──
+  function deleteTask(id) {
+    tasks = tasks.filter(t => t.id !== id);
+    save(); render();
+  }
+
+  // ── Clear all ──
+  function clearAll() {
+    if (confirm('Clear all plans for today?')) { tasks = []; save(); render(); }
+  }
+
+  // ── Toggle pending only ──
+  function togglePending() {
+    pendingOnly = !pendingOnly;
+    const track = document.getElementById('toggle-pending');
+    track.classList.toggle('on', pendingOnly);
+    render();
+  }
+
+  // ── Theme ──
+  function setTheme(name, color, btnId) {
+    lsBg = color;
+    document.getElementById('ls-bg').style.background = color;
+    document.querySelectorAll('.theme-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById(btnId).classList.add('selected');
+  }
+
+  // ── Save ──
+  function save() {
+    localStorage.setItem('dd-tasks', JSON.stringify(tasks));
+  }
+
+  // ── Render ──
+  function render() {
+    const total = tasks.length;
+    const done = tasks.filter(t => t.done).length;
+    const pct = total ? Math.round(done / total * 100) : 0;
+
+    // Stats row
+    document.getElementById('stat-total').textContent = total;
+    document.getElementById('stat-done').textContent = done;
+    document.getElementById('stat-left').textContent = total - done;
+
+    // Ring
+    const circ = 113.1;
+    document.getElementById('ring-arc').style.strokeDashoffset = circ - (circ * pct / 100);
+    document.getElementById('ring-pct').textContent = pct + '%';
+    document.getElementById('prog-count').textContent = done + ' done';
+    document.getElementById('prog-label').textContent = total
+      ? (total - done) + ' remaining today'
+      : 'Add plans to get started';
+
+    // Task list
+    const list = document.getElementById('task-list');
+    const empty = document.getElementById('empty-state');
+    if (total === 0) {
+      list.innerHTML = '';
+      empty.style.display = 'block';
+    } else {
+      empty.style.display = 'none';
+      list.innerHTML = tasks.map(t => `
+        <div class="task-item ${t.done ? 'done' : ''}" onclick="toggleTask(${t.id})">
+          <div class="task-check ${t.done ? 'checked' : ''}">
+            ${t.done ? '<i class="ti ti-check"></i>' : ''}
+          </div>
+          <span class="task-text">${escHtml(t.text)}</span>
+          <span class="task-tag tag-${t.cat}">${t.cat}</span>
+          <button class="task-del" onclick="event.stopPropagation(); deleteTask(${t.id})" aria-label="Delete">
+            <i class="ti ti-x"></i>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    // Lock screen
+    const toShow = tasks
+      .filter(t => pendingOnly ? !t.done : true)
+      .slice(0, maxShown);
+
+    document.getElementById('ls-preview').innerHTML = toShow.length
+      ? toShow.map(t => `
+          <div class="ls-task-row ${t.done ? 'done' : ''}">
+            <span class="ls-dot ${t.done ? 'faded' : t.cat}"></span>
+            ${escHtml(t.text)}
+          </div>
+        `).join('')
+      : '<div style="font-size:12px;color:rgba(255,255,255,0.4);padding:4px 0;">No plans yet</div>';
+
+    document.getElementById('ls-fill').style.width = pct + '%';
+    document.getElementById('ls-stat').textContent = done + ' / ' + total + ' done';
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── Quick grid ──
+  function renderQuick() {
+    document.getElementById('quick-grid').innerHTML = quickSuggestions.map(s => `
+      <button class="quick-chip" onclick="
+        document.getElementById('task-input').value='${s.text.replace(/'/g,"\\'")}';
+        selectCat('${s.cat}');
+      ">${s.text}</button>
+    `).join('');
+  }
+
+  // ── Clock ──
+  function updateClock() {
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2, '0');
+    const m = String(now.getMinutes()).padStart(2, '0');
+    document.getElementById('ls-clock').textContent = h + ':' + m;
+    const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    document.getElementById('ls-date').textContent =
+      `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`;
+  }
+
+  // ── Init ──
+  updateClock();
+  setInterval(updateClock, 30000);
+  render();
+  renderQuick();
+</script>
+</body>
+</html>
