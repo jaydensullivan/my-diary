@@ -1,680 +1,2423 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-  <title>Daily Diary</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.6.0/dist/tabler-icons.min.css" />
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>DGHOST — CASE DROP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{
+--bg:#000000;
+--red:#ff1f3d;
+--red-glow:#ff3b52;
+--red-dim:#4d0f18;
+--text:#f3ecec;
+--muted:#8a5a60;
+--silver:#eef0f2;
+}
 
-    :root {
-      --bg: #f5f5f7;
-      --surface: #ffffff;
-      --surface2: #f0f0f2;
-      --border: rgba(0,0,0,0.10);
-      --border2: rgba(0,0,0,0.18);
-      --text: #1a1a1e;
-      --text2: #6b6b75;
-      --text3: #aeaeb8;
-      --accent: #3a5af5;
-      --accent-bg: #eef1fe;
-      --green: #3a9e6e;
-      --green-bg: #e6f7ef;
-      --radius: 12px;
-      --radius-sm: 8px;
-    }
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #0f0f12;
-        --surface: #1c1c22;
-        --surface2: #26262e;
-        --border: rgba(255,255,255,0.08);
-        --border2: rgba(255,255,255,0.16);
-        --text: #f0f0f4;
-        --text2: #9090a0;
-        --text3: #55555f;
-        --accent-bg: #1a2050;
-        --green-bg: #0d2e1e;
-      }
-    }
+html,body{
+margin:0;
+padding:0;
+min-height:100%;
+background:var(--bg);
+color:var(--text);
+font-family:'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
 
-    html, body {
-      height: 100%;
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      -webkit-tap-highlight-color: transparent;
-    }
+canvas#rain{
+position:fixed;
+inset:0;
+z-index:0;
+opacity:0.55;
+}
 
-    #app {
-      max-width: 430px;
-      margin: 0 auto;
-      min-height: 100%;
-      background: var(--bg);
-      position: relative;
-      display: flex;
-      flex-direction: column;
-    }
+.vignette{
+position:fixed;
+inset:0;
+z-index:1;
+pointer-events:none;
+background:
+radial-gradient(ellipse at 50% 40%, transparent 30%, #000 88%),
+linear-gradient(180deg, #000 0%, transparent 14%, transparent 86%, #000 100%);
+}
 
-    /* ── Screens ── */
-    .screen { display: none; flex: 1; flex-direction: column; overflow-y: auto; padding-bottom: 70px; }
-    .screen.active { display: flex; }
+/* ---------- corner brand marks ---------- */
+.brand-tl, .brand-tr{
+position:fixed;
+top:18px;
+z-index:2;
+font-family:'JetBrains Mono', monospace;
+font-size:10px;
+letter-spacing:0.14em;
+color:var(--muted);
+}
 
-    /* ── Nav bar ── */
-    .topbar {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 16px 20px 12px;
-      background: var(--surface);
-      border-bottom: 0.5px solid var(--border);
-      position: sticky; top: 0; z-index: 10;
-    }
-    .topbar-title { font-size: 17px; font-weight: 600; color: var(--text); }
-    .topbar-btn {
-      background: none; border: none; cursor: pointer;
-      color: var(--text2); font-size: 22px;
-      display: flex; align-items: center; padding: 4px;
-      border-radius: 6px; transition: background 0.15s;
-    }
-    .topbar-btn:hover { background: var(--surface2); }
-    .topbar-back { color: var(--accent); font-size: 15px; font-weight: 500; display: flex; align-items: center; gap: 3px; }
+.brand-tl{ left:18px; }
+.brand-tr{ right:18px; }
 
-    /* ── Bottom tab bar ── */
-    .tabbar {
-      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
-      width: 100%; max-width: 430px;
-      display: flex;
-      background: var(--surface);
-      border-top: 0.5px solid var(--border);
-      padding-bottom: env(safe-area-inset-bottom);
-    }
-    .tab {
-      flex: 1; display: flex; flex-direction: column; align-items: center;
-      padding: 10px 0 8px; gap: 3px; cursor: pointer;
-      background: none; border: none;
-      color: var(--text3); font-size: 10px; font-weight: 500;
-      transition: color 0.15s;
-    }
-    .tab i { font-size: 22px; }
-    .tab.active { color: var(--accent); }
+.brand-tl b, .brand-tr b{
+color:var(--red);
+font-weight:600;
+}
 
-    /* ── Lock screen widget ── */
-    .ls-wrap {
-      margin: 16px;
-      background: var(--surface2);
-      border-radius: 18px;
-      padding: 12px;
-    }
-    .ls-badge {
-      display: flex; align-items: center; gap: 5px;
-      font-size: 11px; color: var(--text2); margin-bottom: 8px; font-weight: 500;
-    }
-    .ls-badge i { font-size: 13px; }
-    .lockscreen {
-      border-radius: 14px;
-      padding: 20px 16px 16px;
-      color: #fff;
-      min-height: 200px;
-    }
-    .ls-time {
-      font-size: 48px; font-weight: 200; text-align: center;
-      letter-spacing: -2px; color: #fff; line-height: 1;
-    }
-    .ls-date {
-      font-size: 14px; text-align: center;
-      color: rgba(255,255,255,0.7); margin: 4px 0 14px;
-    }
-    .ls-card {
-      background: rgba(255,255,255,0.14);
-      border-radius: 14px; padding: 10px 12px;
-    }
-    .ls-card-title {
-      font-size: 11px; color: rgba(255,255,255,0.6);
-      text-transform: uppercase; letter-spacing: 0.6px;
-      margin-bottom: 8px; display: flex; align-items: center; gap: 5px;
-    }
-    .ls-card-title i { font-size: 13px; }
-    .ls-task-row {
-      display: flex; align-items: center; gap: 8px;
-      padding: 3px 0; font-size: 13px; color: rgba(255,255,255,0.9);
-    }
-    .ls-task-row.done { color: rgba(255,255,255,0.38); text-decoration: line-through; }
-    .ls-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-    .ls-dot.work   { background: #7a9cff; }
-    .ls-dot.personal { background: #7deba8; }
-    .ls-dot.health { background: #ffb057; }
-    .ls-dot.faded  { background: rgba(255,255,255,0.28); }
-    .ls-bar-row {
-      display: flex; align-items: center; gap: 8px; margin-top: 10px;
-    }
-    .ls-bar { flex: 1; height: 3px; background: rgba(255,255,255,0.18); border-radius: 99px; overflow: hidden; }
-    .ls-bar-fill { height: 100%; background: #7deba8; border-radius: 99px; transition: width 0.4s; }
-    .ls-bar-label { font-size: 11px; color: rgba(255,255,255,0.55); white-space: nowrap; }
+.tag{
+border:1px solid var(--red-dim);
+padding:4px 9px;
+border-radius:3px;
+display:inline-block;
+}
 
-    /* ── Progress card ── */
-    .prog-card {
-      margin: 0 16px 16px;
-      background: var(--surface);
-      border: 0.5px solid var(--border);
-      border-radius: var(--radius);
-      padding: 14px 16px;
-      display: flex; align-items: center; gap: 14px;
-    }
-    .ring-wrap { position: relative; width: 48px; height: 48px; flex-shrink: 0; }
-    .ring-wrap svg { transform: rotate(-90deg); }
-    .ring-pct {
-      position: absolute; inset: 0;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 11px; font-weight: 600; color: var(--text);
-    }
-    .prog-info { flex: 1; }
-    .prog-count { font-size: 22px; font-weight: 600; color: var(--text); line-height: 1.2; }
-    .prog-label { font-size: 13px; color: var(--text2); margin-top: 2px; }
+/* ---------- layout ---------- */
+.wrap{
+position:relative;
+z-index:2;
+min-height:100vh;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+padding:50px 20px 100px;
+text-align:center;
+}
 
-    /* ── Section ── */
-    .section { padding: 0 16px; }
-    .section-label {
-      font-size: 12px; color: var(--text2); font-weight: 600;
-      text-transform: uppercase; letter-spacing: 0.5px;
-      margin-bottom: 10px;
-    }
+.eyebrow{
+font-family:'JetBrains Mono', monospace;
+font-size:11px;
+letter-spacing:0.32em;
+text-transform:uppercase;
+color:var(--red);
+margin-bottom:14px;
+}
 
-    /* ── Task items ── */
-    .task-item {
-      display: flex; align-items: center; gap: 10px;
-      padding: 12px 14px;
-      background: var(--surface);
-      border: 0.5px solid var(--border);
-      border-radius: var(--radius-sm);
-      margin-bottom: 8px;
-      cursor: pointer;
-      transition: opacity 0.2s, border-color 0.15s;
-    }
-    .task-item:hover { border-color: var(--border2); }
-    .task-item.done { opacity: 0.5; }
-    .task-check {
-      width: 20px; height: 20px; border-radius: 50%;
-      border: 1.5px solid var(--border2);
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0; transition: all 0.2s;
-    }
-    .task-check.checked { background: var(--green); border-color: var(--green); }
-    .task-check.checked i { color: #fff; font-size: 12px; }
-    .task-text { flex: 1; font-size: 15px; color: var(--text); }
-    .task-item.done .task-text { text-decoration: line-through; color: var(--text2); }
-    .task-tag {
-      font-size: 11px; font-weight: 600; padding: 3px 9px;
-      border-radius: 99px;
-    }
-    .tag-work     { background: #dde5ff; color: #2a3daa; }
-    .tag-personal { background: #d4f5e2; color: #166040; }
-    .tag-health   { background: #fde8cc; color: #7a3e00; }
-    @media (prefers-color-scheme: dark) {
-      .tag-work     { background: #1e2a66; color: #99aaff; }
-      .tag-personal { background: #0e3020; color: #6ddfa0; }
-      .tag-health   { background: #3a2000; color: #ffb866; }
-    }
-    .task-del {
-      background: none; border: none; cursor: pointer;
-      color: var(--text3); font-size: 18px;
-      padding: 2px; opacity: 0; transition: opacity 0.15s;
-    }
-    .task-item:hover .task-del { opacity: 1; }
+.eyebrow::before{ content:"— "; color:var(--red-dim); }
+.eyebrow::after{ content:" —"; color:var(--red-dim); }
 
-    /* ── Empty state ── */
-    .empty {
-      text-align: center; padding: 32px 0;
-      color: var(--text2); font-size: 14px;
-    }
-    .empty i { font-size: 36px; display: block; margin-bottom: 10px; color: var(--text3); }
+/* glitch title */
+h1{
+position:relative;
+font-family:'Orbitron','Inter',sans-serif;
+font-size:clamp(28px, 9vw, 40px);
+font-weight:900;
+letter-spacing:0.01em;
+margin:0 0 6px;
+color:var(--silver);
+text-shadow:0 0 22px rgba(255,31,61,0.45);
+}
 
-    /* ── Add form ── */
-    .add-wrap { padding: 16px; }
-    .add-card {
-      background: var(--surface);
-      border: 0.5px solid var(--border);
-      border-radius: var(--radius);
-      padding: 14px;
-      margin-bottom: 20px;
-    }
-    .add-input {
-      width: 100%; font-size: 16px; border: none; outline: none;
-      background: transparent; color: var(--text);
-      margin-bottom: 12px; line-height: 1.5;
-    }
-    .add-input::placeholder { color: var(--text3); }
-    .cat-row { display: flex; gap: 8px; align-items: center; }
-    .cat-btn {
-      font-size: 12px; font-weight: 600; padding: 5px 12px;
-      border-radius: 99px;
-      border: 0.5px solid var(--border2);
-      background: var(--surface2);
-      color: var(--text2);
-      cursor: pointer; transition: all 0.15s;
-    }
-    .cat-btn.sel-work     { background: #dde5ff; color: #2a3daa; border-color: transparent; }
-    .cat-btn.sel-personal { background: #d4f5e2; color: #166040; border-color: transparent; }
-    .cat-btn.sel-health   { background: #fde8cc; color: #7a3e00; border-color: transparent; }
-    @media (prefers-color-scheme: dark) {
-      .cat-btn.sel-work     { background: #1e2a66; color: #99aaff; }
-      .cat-btn.sel-personal { background: #0e3020; color: #6ddfa0; }
-      .cat-btn.sel-health   { background: #3a2000; color: #ffb866; }
-    }
-    .add-btn {
-      margin-left: auto; font-size: 14px; font-weight: 600;
-      padding: 6px 18px; border-radius: var(--radius-sm);
-      background: var(--accent); color: #fff; border: none; cursor: pointer;
-      transition: opacity 0.15s;
-    }
-    .add-btn:active { opacity: 0.8; }
+h1::before, h1::after{
+content:attr(data-text);
+position:absolute;
+left:0; right:0; top:0;
+opacity:0.7;
+}
 
-    .quick-label { font-size: 12px; color: var(--text2); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
-    .quick-grid { display: flex; flex-wrap: wrap; gap: 8px; }
-    .quick-chip {
-      font-size: 13px; padding: 6px 14px; border-radius: 99px;
-      border: 0.5px solid var(--border2);
-      background: var(--surface);
-      color: var(--text2);
-      cursor: pointer; transition: background 0.15s;
-    }
-    .quick-chip:hover { background: var(--surface2); }
+h1::before{
+color:#ff1f3d;
+animation:glitchA 3.4s infinite steps(1);
+clip-path:inset(0 0 60% 0);
+}
 
-    /* ── Settings ── */
-    .settings-wrap { padding: 16px; }
-    .settings-section { margin-bottom: 24px; }
-    .settings-section .section-label { margin-bottom: 12px; }
-    .theme-row { display: flex; gap: 10px; margin-bottom: 20px; }
-    .theme-card {
-      flex: 1; border-radius: 12px; padding: 12px 8px;
-      text-align: center; font-size: 12px; font-weight: 600;
-      color: #fff; cursor: pointer;
-      border: 2px solid transparent; transition: border-color 0.2s;
-    }
-    .theme-card.selected { border-color: var(--accent); }
-    .setting-row {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 12px 0; border-bottom: 0.5px solid var(--border);
-    }
-    .setting-row:last-child { border-bottom: none; }
-    .setting-label { font-size: 15px; color: var(--text); }
-    .toggle-track {
-      width: 40px; height: 24px; border-radius: 99px;
-      background: var(--border2); position: relative;
-      cursor: pointer; transition: background 0.2s;
-    }
-    .toggle-track.on { background: var(--green); }
-    .toggle-thumb {
-      position: absolute; top: 3px; left: 3px;
-      width: 18px; height: 18px; border-radius: 50%;
-      background: #fff; transition: transform 0.2s;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-    }
-    .toggle-track.on .toggle-thumb { transform: translateX(16px); }
-    .setting-select {
-      font-size: 14px; background: var(--surface2);
-      color: var(--text); border: 0.5px solid var(--border2);
-      border-radius: var(--radius-sm); padding: 4px 10px;
-      outline: none; cursor: pointer;
-    }
-    .danger-btn {
-      width: 100%; padding: 12px;
-      font-size: 15px; font-weight: 600;
-      color: #c0392b; background: none;
-      border: 0.5px solid rgba(192,57,43,0.3);
-      border-radius: var(--radius-sm); cursor: pointer;
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-      transition: background 0.15s;
-    }
-    .danger-btn:hover { background: rgba(192,57,43,0.07); }
+h1::after{
+color:#4ad4ff;
+animation:glitchB 3.4s infinite steps(1);
+clip-path:inset(60% 0 0 0);
+}
 
-    /* ── iOS-style stat row ── */
-    .stat-row { display: flex; gap: 10px; margin: 0 16px 16px; }
-    .stat-card {
-      flex: 1; background: var(--surface); border: 0.5px solid var(--border);
-      border-radius: var(--radius-sm); padding: 10px 12px;
-    }
-    .stat-num { font-size: 20px; font-weight: 700; color: var(--text); }
-    .stat-lbl { font-size: 11px; color: var(--text2); margin-top: 2px; }
-  </style>
+@keyframes glitchA{
+0%,92%,100%{ transform:translate(0,0); opacity:0; }
+93%{ transform:translate(-2px,-1px); opacity:0.8; }
+95%{ transform:translate(2px,1px); opacity:0.6; }
+97%{ transform:translate(-1px,0); opacity:0.8; }
+}
+
+@keyframes glitchB{
+0%,91%,100%{ transform:translate(0,0); opacity:0; }
+92%{ transform:translate(2px,1px); opacity:0.7; }
+94%{ transform:translate(-2px,-1px); opacity:0.5; }
+96%{ transform:translate(1px,0); opacity:0.7; }
+}
+
+.lot{
+font-size:13px;
+color:var(--muted);
+margin-bottom:22px;
+letter-spacing:0.02em;
+}
+
+.prize{
+display:inline-flex;
+align-items:center;
+gap:6px;
+padding:7px 18px;
+border-radius:2px;
+background:rgba(255,31,61,0.06);
+border:1px solid var(--red-dim);
+color:var(--silver);
+font-family:'JetBrains Mono', monospace;
+font-size:12px;
+font-weight:500;
+margin-bottom:36px;
+}
+
+.prize b{ color:var(--red); font-weight:600; }
+
+/* ---------- countdown ring ---------- */
+.crystal{
+position:relative;
+width:min(300px, 78vw);
+aspect-ratio:1/1;
+display:flex;
+align-items:center;
+justify-content:center;
+margin-bottom:34px;
+}
+
+.crystal svg{
+position:absolute;
+inset:0;
+width:100%;
+height:100%;
+}
+
+.crystal-ring{
+fill:none;
+stroke:rgba(255,31,61,0.14);
+stroke-width:2;
+}
+
+.crystal-progress{
+fill:none;
+stroke:var(--red);
+stroke-width:3;
+stroke-linecap:round;
+filter:drop-shadow(0 0 9px rgba(255,31,61,0.75));
+transition:stroke-dashoffset 1s linear;
+}
+
+.digits{
+position:relative;
+display:flex;
+flex-direction:column;
+align-items:center;
+gap:2px;
+}
+
+.time-row{
+font-family:'Orbitron','JetBrains Mono',sans-serif;
+font-size:clamp(30px, 8vw, 40px);
+font-weight:700;
+letter-spacing:0.03em;
+font-variant-numeric:tabular-nums;
+color:var(--silver);
+text-shadow:0 0 18px rgba(255,31,61,0.4);
+}
+
+.time-labels{
+display:flex;
+gap:14px;
+font-family:'JetBrains Mono', monospace;
+font-size:10px;
+letter-spacing:0.18em;
+text-transform:uppercase;
+color:var(--muted);
+margin-top:4px;
+}
+
+.started-badge{
+display:none;
+font-family:'Orbitron','Inter',sans-serif;
+font-size:clamp(20px,6vw,28px);
+font-weight:800;
+color:var(--red);
+text-shadow:0 0 22px rgba(255,31,61,0.65);
+animation:pulse 1.1s ease-in-out infinite;
+}
+
+@keyframes pulse{
+0%,100%{ opacity:1; transform:scale(1); }
+50%{ opacity:0.7; transform:scale(1.05); }
+}
+
+/* ---------- cta ---------- */
+.cta-frame{
+position:relative;
+width:100%;
+max-width:300px;
+}
+
+.cta-frame::before, .cta-frame::after{
+content:"";
+position:absolute;
+width:14px; height:14px;
+border:1.5px solid var(--red);
+opacity:0.8;
+}
+
+.cta-frame::before{ top:-6px; left:-6px; border-right:none; border-bottom:none; }
+.cta-frame::after{ bottom:-6px; right:-6px; border-left:none; border-top:none; }
+
+.cta{
+width:100%;
+padding:15px 20px;
+border-radius:2px;
+border:1px solid var(--red-dim);
+background:linear-gradient(180deg, rgba(255,31,61,0.12), rgba(255,31,61,0.02));
+color:var(--silver);
+font-family:'JetBrains Mono', monospace;
+font-size:13px;
+font-weight:600;
+letter-spacing:0.06em;
+text-transform:uppercase;
+cursor:pointer;
+transition:transform .15s ease, background .2s ease;
+}
+
+.cta:active{ transform:scale(0.97); }
+
+.cta.live{
+border-color:var(--red);
+background:linear-gradient(180deg, rgba(255,31,61,0.22), rgba(255,31,61,0.04));
+}
+
+.footer-note{
+margin-top:20px;
+font-family:'JetBrains Mono', monospace;
+font-size:10px;
+letter-spacing:0.1em;
+color:var(--muted);
+}
+
+.footer-note b{ color:var(--red); }
+
+/* ---------- admin edit button + modal ---------- */
+.edit-fab{
+position:fixed;
+right:16px;
+bottom:76px;
+z-index:5;
+width:44px;
+height:44px;
+border-radius:50%;
+border:1px solid var(--red-dim);
+background:rgba(0,0,0,0.7);
+color:var(--red);
+font-size:18px;
+display:none;
+align-items:center;
+justify-content:center;
+cursor:pointer;
+backdrop-filter:blur(4px);
+}
+
+.edit-fab.show{ display:flex; }
+
+.edit-overlay{
+position:fixed;
+inset:0;
+z-index:10;
+background:rgba(0,0,0,0.75);
+backdrop-filter:blur(3px);
+display:none;
+align-items:flex-end;
+justify-content:center;
+}
+
+.edit-overlay.show{ display:flex; }
+
+.edit-sheet{
+width:100%;
+max-width:420px;
+background:#0a0a0c;
+border:1px solid var(--red-dim);
+border-bottom:none;
+border-radius:14px 14px 0 0;
+padding:20px 18px 28px;
+}
+
+.edit-sheet h2{
+margin:0 0 16px;
+font-family:'JetBrains Mono', monospace;
+font-size:13px;
+letter-spacing:0.1em;
+text-transform:uppercase;
+color:var(--red);
+}
+
+.edit-field{
+margin-bottom:12px;
+text-align:left;
+}
+
+.edit-field label{
+display:block;
+font-family:'JetBrains Mono', monospace;
+font-size:10px;
+letter-spacing:0.08em;
+text-transform:uppercase;
+color:var(--muted);
+margin-bottom:5px;
+}
+
+.edit-field input{
+width:100%;
+padding:10px 12px;
+border-radius:4px;
+border:1px solid var(--red-dim);
+background:rgba(255,255,255,0.03);
+color:var(--silver);
+font-family:'Inter', sans-serif;
+font-size:14px;
+}
+
+.edit-field input:focus{
+outline:none;
+border-color:var(--red);
+}
+
+.edit-actions{
+display:flex;
+gap:10px;
+margin-top:16px;
+}
+
+.edit-actions button{
+flex:1;
+padding:12px;
+border-radius:4px;
+font-family:'JetBrains Mono', monospace;
+font-size:12px;
+letter-spacing:0.05em;
+text-transform:uppercase;
+cursor:pointer;
+border:1px solid var(--red-dim);
+background:transparent;
+color:var(--muted);
+}
+
+.edit-actions .save{
+border-color:var(--red);
+background:linear-gradient(180deg, rgba(255,31,61,0.22), rgba(255,31,61,0.04));
+color:var(--silver);
+}
+
+.edit-status{
+margin-top:10px;
+font-family:'JetBrains Mono', monospace;
+font-size:11px;
+color:var(--muted);
+min-height:14px;
+}
+
+/* ---------- bottom nav ---------- */
+.bottom-nav{
+position:fixed;
+bottom:0;
+left:0;
+right:0;
+z-index:4;
+display:flex;
+border-top:1px solid var(--red-dim);
+background:rgba(5,3,4,0.92);
+backdrop-filter:blur(10px);
+padding-bottom:env(safe-area-inset-bottom, 0px);
+}
+
+.nav-btn{
+flex:1;
+display:flex;
+flex-direction:column;
+align-items:center;
+gap:2px;
+padding:9px 4px 8px;
+border:none;
+background:transparent;
+color:var(--muted);
+cursor:pointer;
+}
+
+.nav-icon{
+font-size:19px;
+line-height:1;
+filter:grayscale(1) opacity(0.7);
+}
+
+.nav-icon img{
+width:22px;
+height:22px;
+border-radius:50%;
+object-fit:cover;
+display:block;
+}
+
+.nav-label{
+font-family:'JetBrains Mono', monospace;
+font-size:9px;
+letter-spacing:0.04em;
+text-transform:uppercase;
+}
+
+.nav-btn.active{ color:var(--red); }
+
+.nav-btn.active .nav-icon{ filter:none; }
+
+.nav-btn.active .nav-icon img{
+box-shadow:0 0 0 2px var(--red);
+}
+
+/* ---------- profile screen ---------- */
+.screen-profile{
+display:none;
+position:relative;
+z-index:2;
+min-height:100vh;
+padding:50px 16px 100px;
+}
+
+.profile-card{
+display:flex;
+flex-direction:column;
+align-items:center;
+text-align:center;
+padding:22px 16px;
+margin-bottom:14px;
+border-radius:12px;
+border:1px solid var(--red-dim);
+background:rgba(255,31,61,0.04);
+}
+
+.profile-avatar{
+width:64px;
+height:64px;
+border-radius:50%;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:28px;
+background:rgba(255,31,61,0.12);
+border:1px solid var(--red-dim);
+margin-bottom:10px;
+overflow:hidden;
+}
+
+.profile-avatar img{
+width:100%;
+height:100%;
+object-fit:cover;
+}
+
+.profile-name{
+font-family:'Inter', sans-serif;
+font-size:15px;
+font-weight:600;
+color:var(--silver);
+margin-bottom:6px;
+}
+
+.profile-balance{
+font-family:'JetBrains Mono', monospace;
+font-size:18px;
+font-weight:700;
+color:var(--red);
+}
+
+.profile-held{
+font-family:'JetBrains Mono', monospace;
+font-size:10px;
+color:var(--muted);
+margin-top:2px;
+}
+
+.profile-stats{
+display:grid;
+grid-template-columns:repeat(3, 1fr);
+gap:8px;
+margin-bottom:14px;
+}
+
+.stat-box{
+padding:12px 6px;
+border-radius:10px;
+border:1px solid var(--red-dim);
+background:rgba(255,255,255,0.02);
+text-align:center;
+}
+
+.stat-value{
+font-family:'JetBrains Mono', monospace;
+font-size:15px;
+font-weight:700;
+color:var(--silver);
+}
+
+.stat-label{
+font-family:'JetBrains Mono', monospace;
+font-size:8px;
+letter-spacing:0.04em;
+text-transform:uppercase;
+color:var(--muted);
+margin-top:3px;
+}
+
+.profile-section{
+padding:14px;
+border-radius:10px;
+border:1px solid var(--red-dim);
+background:rgba(255,255,255,0.02);
+text-align:left;
+}
+
+.profile-section-title{
+font-family:'JetBrains Mono', monospace;
+font-size:11px;
+letter-spacing:0.08em;
+text-transform:uppercase;
+color:var(--red);
+margin-bottom:10px;
+}
+
+.profile-steam-status{
+font-family:'Inter', sans-serif;
+font-size:12px;
+color:var(--silver);
+margin-bottom:8px;
+}
+
+.steam-link-btn.secondary{
+background:transparent;
+color:var(--muted);
+border-color:var(--muted);
+}
+
+/* ---------- deal cards ---------- */
+.deal-card{
+display:flex;
+gap:10px;
+padding:10px;
+border-radius:10px;
+border:1px solid var(--red-dim);
+background:rgba(255,255,255,0.02);
+margin-bottom:8px;
+align-items:center;
+}
+
+.deal-photo{
+width:44px;
+height:44px;
+border-radius:8px;
+object-fit:cover;
+background:rgba(255,31,61,0.08);
+flex-shrink:0;
+}
+
+.deal-info{
+flex:1;
+min-width:0;
+text-align:left;
+}
+
+.deal-title{
+font-family:'Inter', sans-serif;
+font-size:12px;
+font-weight:600;
+color:var(--silver);
+white-space:nowrap;
+overflow:hidden;
+text-overflow:ellipsis;
+}
+
+.deal-meta{
+font-family:'JetBrains Mono', monospace;
+font-size:9px;
+color:var(--muted);
+margin-top:2px;
+}
+
+.deal-status{
+font-family:'JetBrains Mono', monospace;
+font-size:9px;
+margin-top:3px;
+letter-spacing:0.03em;
+text-transform:uppercase;
+}
+
+.deal-status.pending{ color:#e4ae39; }
+.deal-status.sent{ color:#5e98d9; }
+.deal-status.done{ color:#4caf50; }
+
+.deal-action{
+flex-shrink:0;
+padding:7px 10px;
+border-radius:7px;
+border:1px solid var(--red);
+background:linear-gradient(180deg, rgba(255,31,61,0.22), rgba(255,31,61,0.04));
+color:var(--silver);
+font-family:'JetBrains Mono', monospace;
+font-size:10px;
+font-weight:600;
+cursor:pointer;
+white-space:nowrap;
+}
+
+/* ---------- shop screen ---------- */
+.screen-shop{
+display:none;
+position:relative;
+z-index:2;
+min-height:100vh;
+padding:50px 16px 100px;
+}
+
+.shop-header{
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:10px;
+margin-bottom:10px;
+}
+
+.balance-pill{
+padding:8px 14px;
+border-radius:20px;
+border:1px solid var(--red-dim);
+background:rgba(255,31,61,0.06);
+color:var(--silver);
+font-family:'JetBrains Mono', monospace;
+font-size:12px;
+font-weight:600;
+}
+
+.add-skin-btn{
+padding:8px 14px;
+border-radius:20px;
+border:1px solid var(--red);
+background:linear-gradient(180deg, rgba(255,31,61,0.24), rgba(255,31,61,0.06));
+color:var(--silver);
+font-family:'JetBrains Mono', monospace;
+font-size:12px;
+font-weight:600;
+cursor:pointer;
+}
+
+.shop-hint{
+font-family:'Inter', sans-serif;
+font-size:11px;
+color:var(--muted);
+line-height:1.4;
+margin-bottom:14px;
+}
+
+.shop-controls{
+display:flex;
+gap:8px;
+margin-bottom:14px;
+}
+
+.skin-search{
+flex:1;
+min-width:0;
+padding:9px 12px;
+border-radius:8px;
+border:1px solid var(--red-dim);
+background:rgba(255,255,255,0.03);
+color:var(--silver);
+font-family:'Inter', sans-serif;
+font-size:12px;
+}
+
+.skin-search:focus{ outline:none; border-color:var(--red); }
+
+.skin-sort{
+padding:9px 8px;
+border-radius:8px;
+border:1px solid var(--red-dim);
+background:#0a0a0c;
+color:var(--silver);
+font-family:'JetBrains Mono', monospace;
+font-size:10px;
+max-width:118px;
+}
+
+.skins-grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:10px;
+}
+
+.skins-empty{
+grid-column:1 / -1;
+text-align:center;
+padding:40px 10px;
+font-family:'JetBrains Mono', monospace;
+font-size:12px;
+color:var(--muted);
+}
+
+.skin-card{
+display:flex;
+flex-direction:column;
+padding:9px;
+border-radius:10px;
+border:1px solid var(--red-dim);
+border-top-width:3px;
+background:rgba(255,255,255,0.02);
+text-align:left;
+}
+
+.skin-card.rarity-consumer{ border-top-color:#b0c3d9; }
+.skin-card.rarity-industrial{ border-top-color:#5e98d9; }
+.skin-card.rarity-milspec{ border-top-color:#4b69ff; }
+.skin-card.rarity-restricted{ border-top-color:#8847ff; }
+.skin-card.rarity-classified{ border-top-color:#d32ce6; }
+.skin-card.rarity-covert{ border-top-color:#eb4b4b; }
+.skin-card.rarity-contraband{ border-top-color:#e4ae39; }
+.skin-card.rarity-extraordinary{ border-top-color:#e4ae39; }
+
+.skin-photo-wrap{
+position:relative;
+width:100%;
+aspect-ratio:1/1;
+border-radius:8px;
+overflow:hidden;
+background:rgba(255,31,61,0.08);
+margin-bottom:8px;
+}
+
+.skin-photo{
+width:100%;
+height:100%;
+object-fit:cover;
+display:block;
+}
+
+.skin-photo.placeholder{
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:24px;
+height:100%;
+}
+
+.skin-badge{
+position:absolute;
+top:5px;
+font-family:'JetBrains Mono', monospace;
+font-size:9px;
+font-weight:700;
+padding:2px 6px;
+border-radius:4px;
+letter-spacing:0.03em;
+}
+
+.skin-badge.wear{
+right:5px;
+background:rgba(0,0,0,0.75);
+color:var(--silver);
+border:1px solid var(--red-dim);
+}
+
+.skin-badge.stattrak{
+left:5px;
+background:rgba(255,140,0,0.9);
+color:#1a0d00;
+}
+
+.skin-weapon-type{
+font-family:'JetBrains Mono', monospace;
+font-size:9px;
+letter-spacing:0.05em;
+text-transform:uppercase;
+color:var(--muted);
+}
+
+.skin-title{
+font-family:'Inter', sans-serif;
+font-size:12px;
+font-weight:600;
+color:var(--silver);
+line-height:1.25;
+margin-top:2px;
+display:-webkit-box;
+-webkit-line-clamp:2;
+-webkit-box-orient:vertical;
+overflow:hidden;
+min-height:30px;
+}
+
+.skin-float{
+font-family:'JetBrains Mono', monospace;
+font-size:9px;
+color:var(--muted);
+margin-top:3px;
+}
+
+.skin-seller{
+font-family:'JetBrains Mono', monospace;
+font-size:9px;
+color:var(--muted);
+margin-top:2px;
+white-space:nowrap;
+overflow:hidden;
+text-overflow:ellipsis;
+}
+
+.skin-price{
+font-family:'JetBrains Mono', monospace;
+font-size:13px;
+font-weight:700;
+color:var(--red);
+margin-top:5px;
+}
+
+.skin-action{
+margin-top:7px;
+width:100%;
+padding:7px;
+border-radius:7px;
+border:1px solid var(--red);
+background:linear-gradient(180deg, rgba(255,31,61,0.22), rgba(255,31,61,0.04));
+color:var(--silver);
+font-family:'JetBrains Mono', monospace;
+font-size:10px;
+font-weight:600;
+letter-spacing:0.03em;
+text-transform:uppercase;
+cursor:pointer;
+}
+
+.skin-action.own{
+border-color:var(--muted);
+background:transparent;
+color:var(--muted);
+}
+
+/* ---------- add-skin form extras ---------- */
+.edit-sheet{
+max-height:85vh;
+overflow-y:auto;
+}
+
+.edit-row{
+display:flex;
+gap:10px;
+}
+
+.edit-row .edit-field{
+flex:1;
+min-width:0;
+}
+
+.edit-checkbox-field{
+margin-bottom:14px;
+}
+
+.checkbox-label{
+display:flex !important;
+align-items:center;
+gap:8px;
+font-family:'Inter', sans-serif !important;
+font-size:13px !important;
+color:var(--silver) !important;
+text-transform:none !important;
+letter-spacing:0 !important;
+cursor:pointer;
+}
+
+.checkbox-label input{
+width:16px;
+height:16px;
+accent-color:var(--red);
+}
+
+/* ---------- steam link / inventory ---------- */
+.steam-block{
+margin-bottom:14px;
+padding-bottom:14px;
+border-bottom:1px dashed var(--red-dim);
+}
+
+.steam-link-btn, .steam-inv-btn{
+width:100%;
+padding:10px;
+border-radius:7px;
+border:1px solid var(--red);
+background:linear-gradient(180deg, rgba(255,31,61,0.2), rgba(255,31,61,0.04));
+color:var(--silver);
+font-family:'JetBrains Mono', monospace;
+font-size:12px;
+font-weight:600;
+cursor:pointer;
+}
+
+.inventory-sheet{
+max-height:80vh;
+}
+
+.inventory-grid{
+display:grid;
+grid-template-columns:1fr 1fr 1fr;
+gap:8px;
+max-height:50vh;
+overflow-y:auto;
+margin:10px 0;
+}
+
+.inv-item{
+display:flex;
+flex-direction:column;
+align-items:center;
+padding:6px;
+border-radius:8px;
+border:1px solid var(--red-dim);
+background:rgba(255,255,255,0.02);
+cursor:pointer;
+text-align:center;
+}
+
+.inv-item img{
+width:100%;
+aspect-ratio:1/1;
+object-fit:contain;
+margin-bottom:4px;
+}
+
+.inv-item-name{
+font-family:'Inter', sans-serif;
+font-size:9px;
+color:var(--silver);
+line-height:1.2;
+display:-webkit-box;
+-webkit-line-clamp:2;
+-webkit-box-orient:vertical;
+overflow:hidden;
+}
+
+.inv-item-wear{
+font-family:'JetBrains Mono', monospace;
+font-size:8px;
+color:var(--muted);
+margin-top:2px;
+}
+
+/* ---------- buy confirmation sheet ---------- */
+.buy-overlay{
+position:fixed;
+inset:0;
+z-index:10;
+background:rgba(0,0,0,0.75);
+backdrop-filter:blur(3px);
+display:none;
+align-items:flex-end;
+justify-content:center;
+}
+
+.buy-overlay.show{ display:flex; }
+
+.buy-sheet{
+width:100%;
+max-width:420px;
+background:#0a0a0c;
+border:1px solid var(--red-dim);
+border-bottom:none;
+border-radius:14px 14px 0 0;
+padding:20px 18px 28px;
+text-align:center;
+}
+
+.buy-photo{
+width:90px;
+height:90px;
+border-radius:10px;
+object-fit:cover;
+margin:0 auto 12px;
+display:block;
+background:rgba(255,31,61,0.08);
+}
+
+.buy-sheet h2{
+margin:0 0 6px;
+font-family:'Inter', sans-serif;
+font-size:15px;
+font-weight:600;
+color:var(--silver);
+}
+
+.buy-price{
+font-family:'JetBrains Mono', monospace;
+font-size:16px;
+font-weight:700;
+color:var(--red);
+margin-bottom:4px;
+}
+
+.buy-seller{
+font-family:'JetBrains Mono', monospace;
+font-size:11px;
+color:var(--muted);
+margin-bottom:6px;
+}
+</style>
 </head>
 <body>
-<div id="app">
 
-  <!-- HOME SCREEN -->
-  <div class="screen active" id="home-screen">
-    <div class="topbar">
-      <span class="topbar-title">My Diary</span>
-      <button class="topbar-btn" onclick="goTo('add-screen')" aria-label="Add plan">
-        <i class="ti ti-plus"></i>
-      </button>
-    </div>
+<canvas id="rain"></canvas>
+<div class="vignette"></div>
 
-    <!-- Lock screen widget -->
-    <div class="ls-wrap">
-      <div class="ls-badge"><i class="ti ti-lock"></i> Lock screen preview</div>
-      <div class="lockscreen" id="ls-bg" style="background:#1a1a2e;">
-        <div class="ls-time" id="ls-clock">--:--</div>
-        <div class="ls-date" id="ls-date">Wednesday, June 10</div>
-        <div class="ls-card">
-          <div class="ls-card-title"><i class="ti ti-clipboard-list"></i> Today's plans</div>
-          <div id="ls-preview"></div>
-          <div class="ls-bar-row">
-            <div class="ls-bar"><div class="ls-bar-fill" id="ls-fill" style="width:0%"></div></div>
-            <span class="ls-bar-label" id="ls-stat">0 / 0 done</span>
-          </div>
-        </div>
-      </div>
-    </div>
+<div class="brand-tl"><span class="tag">{ <b>DGHOST</b> }</span></div>
 
-    <!-- Stats row -->
-    <div class="stat-row">
-      <div class="stat-card">
-        <div class="stat-num" id="stat-total">0</div>
-        <div class="stat-lbl">Total plans</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-num" id="stat-done">0</div>
-        <div class="stat-lbl">Completed</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-num" id="stat-left">0</div>
-        <div class="stat-lbl">Remaining</div>
-      </div>
-    </div>
+<div class="bottom-nav">
+<button class="nav-btn" id="tabTimerBtn" type="button" style="display:none;">
+<span class="nav-icon">⏱</span>
+<span class="nav-label">Таймер</span>
+</button>
+<button class="nav-btn active" id="tabShopBtn" type="button">
+<span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h2l2.2 12.4a2 2 0 0 0 2 1.6h8.8a2 2 0 0 0 2-1.6L21 7H6"/></svg></span>
+<span class="nav-label">Магазин</span>
+</button>
+<button class="nav-btn" id="tabProfileBtn" type="button">
+<span class="nav-icon" id="navAvatarIcon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1.2-4 4-6 7.5-6s6.3 2 7.5 6"/></svg></span>
+<span class="nav-label">Профиль</span>
+</button>
+</div>
 
-    <!-- Progress ring -->
-    <div class="prog-card">
-      <div class="ring-wrap">
-        <svg width="48" height="48" viewBox="0 0 48 48">
-          <circle cx="24" cy="24" r="18" fill="none" stroke="var(--border2)" stroke-width="4"/>
-          <circle cx="24" cy="24" r="18" fill="none" stroke="#3a9e6e" stroke-width="4"
-            stroke-dasharray="113.1" id="ring-arc" stroke-dashoffset="113.1" stroke-linecap="round"/>
-        </svg>
-        <div class="ring-pct" id="ring-pct">0%</div>
-      </div>
-      <div class="prog-info">
-        <div class="prog-count" id="prog-count">0 done</div>
-        <div class="prog-label" id="prog-label">Add plans to get started</div>
-      </div>
-    </div>
+<div class="wrap" id="screenTimer" style="display:none;">
 
-    <!-- Task list -->
-    <div class="section">
-      <div class="section-label">Today's plans</div>
-      <div id="task-list"></div>
-      <div id="empty-state" class="empty">
-        <i class="ti ti-notes"></i>
-        No plans yet — tap + to add one
-      </div>
-    </div>
-  </div>
+<div class="eyebrow">The ghost never sleeps</div>
 
-  <!-- ADD SCREEN -->
-  <div class="screen" id="add-screen">
-    <div class="topbar">
-      <button class="topbar-btn topbar-back" onclick="goTo('home-screen')">
-        <i class="ti ti-chevron-left"></i> Back
-      </button>
-      <span class="topbar-title">Add Plan</span>
-      <span style="width:60px"></span>
-    </div>
-    <div class="add-wrap">
-      <div class="add-card">
-        <input class="add-input" id="task-input" type="text"
-          placeholder="What's your plan for today?" maxlength="70"
-          onkeydown="if(event.key==='Enter') addTask()" />
-        <div class="cat-row">
-          <button class="cat-btn sel-work" id="cat-work" onclick="selectCat('work')">Work</button>
-          <button class="cat-btn" id="cat-personal" onclick="selectCat('personal')">Personal</button>
-          <button class="cat-btn" id="cat-health" onclick="selectCat('health')">Health</button>
-          <button class="add-btn" onclick="addTask()">Add</button>
-        </div>
-      </div>
-      <div class="quick-label">Quick add</div>
-      <div class="quick-grid" id="quick-grid"></div>
-    </div>
-  </div>
+<h1 id="title" data-text="DIGITAL GHOST">DIGITAL GHOST</h1>
+<div class="lot" id="subtitle">Розыгрыш кейсов в канале</div>
 
-  <!-- SETTINGS SCREEN -->
-  <div class="screen" id="settings-screen">
-    <div class="topbar">
-      <span class="topbar-title">Settings</span>
-    </div>
-    <div class="settings-wrap">
-      <div class="settings-section">
-        <div class="section-label">Widget theme</div>
-        <div class="theme-row">
-          <div class="theme-card selected" id="th-dark" style="background:#1a1a2e;" onclick="setTheme('dark','#1a1a2e','th-dark')">Dark</div>
-          <div class="theme-card" id="th-forest" style="background:#1a3a2a;" onclick="setTheme('forest','#1a3a2a','th-forest')">Forest</div>
-          <div class="theme-card" id="th-midnight" style="background:#0c1e3e;" onclick="setTheme('midnight','#0c1e3e','th-midnight')">Midnight</div>
-        </div>
-      </div>
-      <div class="settings-section">
-        <div class="section-label">Lock screen display</div>
-        <div class="setting-row">
-          <span class="setting-label">Show pending tasks only</span>
-          <div class="toggle-track" id="toggle-pending" onclick="togglePending()">
-            <div class="toggle-thumb"></div>
-          </div>
-        </div>
-        <div class="setting-row">
-          <span class="setting-label">Max tasks shown</span>
-          <select class="setting-select" onchange="maxShown=+this.value; render()">
-            <option value="3">3</option>
-            <option value="4" selected>4</option>
-            <option value="5">5</option>
-          </select>
-        </div>
-      </div>
-      <div class="settings-section">
-        <div class="section-label">Data</div>
-        <button class="danger-btn" onclick="clearAll()">
-          <i class="ti ti-trash"></i> Clear all plans
-        </button>
-      </div>
-    </div>
-  </div>
+<div class="prize" id="prize"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5c0-1 1-1.8 2.5-1.8s2.5.7 2.5 1.7c0 2.3-5 1.3-5 3.6 0 1 1 1.8 2.5 1.8s2.5-.8 2.5-1.8"/></svg> <b>250 000</b>&nbsp;COINS</div>
 
-  <!-- TAB BAR -->
-  <nav class="tabbar">
-    <button class="tab active" id="tab-home" onclick="goTo('home-screen', 'tab-home')">
-      <i class="ti ti-home"></i>Home
-    </button>
-    <button class="tab" id="tab-add" onclick="goTo('add-screen', 'tab-add')">
-      <i class="ti ti-circle-plus"></i>Add plan
-    </button>
-    <button class="tab" id="tab-settings" onclick="goTo('settings-screen', 'tab-settings')">
-      <i class="ti ti-adjustments"></i>Settings
-    </button>
-  </nav>
+<div class="crystal">
+<svg viewBox="0 0 200 200">
+<circle class="crystal-ring" cx="100" cy="100" r="92"></circle>
+<circle class="crystal-progress" id="ring" cx="100" cy="100" r="92"
+stroke-dasharray="578" stroke-dashoffset="0"
+transform="rotate(-90 100 100)"></circle>
+</svg>
+<div class="digits">
+<div class="time-row" id="clock">00:00:00</div>
+<div class="time-labels">
+<span id="labelDays" style="display:none">дни</span>
+<span>часы</span><span>мин</span><span>сек</span>
+</div>
+<div class="started-badge" id="startedBadge">СТАРТ!</div>
+</div>
+</div>
+
+<div class="cta-frame">
+<button class="cta" id="ctaBtn">Участвовать</button>
+</div>
+
+<div class="footer-note">Кто успел — <b>тот забрал</b></div>
 
 </div>
 
+<div class="screen-shop" id="screenShop" style="display:block;">
+
+<div class="shop-header">
+<div class="balance-pill" id="balancePill"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5c0-1 1-1.8 2.5-1.8s2.5.7 2.5 1.7c0 2.3-5 1.3-5 3.6 0 1 1 1.8 2.5 1.8s2.5-.8 2.5-1.8"/></svg> <span id="balanceAmount">—</span></div>
+<button class="add-skin-btn" id="addSkinBtn" type="button">+ Скин</button>
+</div>
+
+<div class="shop-hint">Продал скин — деньги придут покупателю в холд на 8 дней (трейд-бан Steam), затем автоматически на твой баланс.</div>
+
+<div class="shop-controls">
+<input id="skinSearch" class="skin-search" type="text" placeholder="Поиск по названию или оружию...">
+<select id="skinSort" class="skin-sort">
+<option value="new">Сначала новые</option>
+<option value="price_asc">Цена: сначала дешёвые</option>
+<option value="price_desc">Цена: сначала дорогие</option>
+</select>
+</div>
+
+<div class="skins-grid" id="skinsList">
+<div class="skins-empty">Загрузка...</div>
+</div>
+
+</div>
+
+<div class="screen-profile" id="screenProfile">
+
+<div class="profile-card">
+<div class="profile-avatar" id="profileAvatar"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1.2-4 4-6 7.5-6s6.3 2 7.5 6"/></svg></div>
+<div class="profile-name" id="profileName">—</div>
+<div class="profile-balance" id="profileBalance"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5c0-1 1-1.8 2.5-1.8s2.5.7 2.5 1.7c0 2.3-5 1.3-5 3.6 0 1 1 1.8 2.5 1.8s2.5-.8 2.5-1.8"/></svg> <span id="profileBalanceAmount">—</span></div>
+<div class="profile-held" id="profileHeld"></div>
+</div>
+
+<div class="profile-stats">
+<div class="stat-box">
+<div class="stat-value" id="statSold">—</div>
+<div class="stat-label">Продано</div>
+</div>
+<div class="stat-box">
+<div class="stat-value" id="statBought">—</div>
+<div class="stat-label">Куплено</div>
+</div>
+<div class="stat-box">
+<div class="stat-value" id="statActive">—</div>
+<div class="stat-label">Активных лотов</div>
+</div>
+</div>
+
+<div class="profile-section" id="profileSteamSection">
+<div class="profile-section-title">Steam</div>
+<div id="profileSteamLinked" style="display:none;">
+<div class="profile-steam-status"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px"><path d="M20 6 9 17l-5-5"/></svg> Трейд-ссылка привязана</div>
+<button type="button" id="profileRelinkBtn" class="steam-link-btn secondary">Изменить ссылку</button>
+</div>
+<div id="profileSteamUnlinked">
+<div class="edit-field">
+<input id="pTradeLink" type="text" placeholder="https://steamcommunity.com/tradeoffer/new/?partner=...&token=...">
+</div>
+<button type="button" id="profileLinkBtn" class="steam-link-btn">Привязать трейд-ссылку</button>
+</div>
+<div class="edit-status" id="profileSteamStatus"></div>
+</div>
+
+<div class="profile-section" id="profileDealsSection" style="margin-top:10px;">
+<div class="profile-section-title">Мои сделки</div>
+<div id="dealsList">
+<div class="skins-empty" style="padding:16px 4px;">Загрузка...</div>
+</div>
+</div>
+
+<div class="profile-section" id="profileWithdrawSection" style="margin-top:10px;">
+<div class="profile-section-title">Вывод средств</div>
+<div class="shop-hint" style="margin-bottom:10px;">Минимум — <span id="withdrawMinLabel">5,000</span> COINS. Деньги переводятся вручную на указанные реквизиты в течение некоторого времени.</div>
+<div class="edit-field">
+<label for="wAmount">Сумма, COINS</label>
+<input id="wAmount" type="number" min="1" placeholder="5000">
+</div>
+<div class="edit-field">
+<label for="wDetails">Карта Uzcard/Humo/Visa или номер Payme/Click</label>
+<input id="wDetails" type="text" placeholder="8600 1234 5678 9012">
+</div>
+<button type="button" id="withdrawSubmitBtn" class="steam-link-btn">Подать заявку на вывод</button>
+<div class="edit-status" id="withdrawStatus"></div>
+</div>
+
+</div>
+
+<button class="edit-fab" id="editFab" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+
+
+<div class="edit-overlay" id="editOverlay">
+<div class="edit-sheet">
+<h2>Редактировать розыгрыш</h2>
+
+<div class="edit-field">
+<label for="fTitle">Заголовок</label>
+<input id="fTitle" type="text" maxlength="80" placeholder="DIGITAL GHOST">
+</div>
+
+<div class="edit-field">
+<label for="fSubtitle">Подзаголовок</label>
+<input id="fSubtitle" type="text" maxlength="120" placeholder="Розыгрыш кейсов в канале">
+</div>
+
+<div class="edit-field">
+<label for="fPrize">Приз</label>
+<input id="fPrize" type="text" maxlength="60" placeholder="250 000 COINS">
+</div>
+
+<div class="edit-field">
+<label for="fMinutes">Сколько минут осталось (оставь пустым, чтобы не менять)</label>
+<input id="fMinutes" type="number" min="1" placeholder="10">
+</div>
+
+<div class="edit-actions">
+<button type="button" id="editCancel">Отмена</button>
+<button type="button" id="editSave" class="save">Сохранить</button>
+</div>
+
+<div class="edit-status" id="editStatus"></div>
+</div>
+</div>
+
+<div class="edit-overlay" id="addSkinOverlay">
+<div class="edit-sheet">
+<h2>Выставить скин</h2>
+
+<div class="steam-block" id="steamLinkBlock">
+<div class="shop-hint" style="margin-bottom:0;">Привяжи трейд-ссылку во вкладке «Профиль», чтобы подставлять предметы из инвентаря Steam одним тапом.</div>
+</div>
+
+<div class="steam-block" id="steamInventoryBlock" style="display:none;">
+<button type="button" id="openInventoryBtn" class="steam-inv-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="vertical-align:-3px;margin-right:4px"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>Выбрать из инвентаря Steam</button>
+</div>
+
+<div class="edit-field">
+<label for="sWeaponType">Оружие / категория</label>
+<input id="sWeaponType" type="text" maxlength="40" placeholder="AK-47, AWP, Ножи...">
+</div>
+
+<div class="edit-field">
+<label for="sTitle">Название скина</label>
+<input id="sTitle" type="text" maxlength="80" placeholder="Redline">
+</div>
+
+<div class="edit-field">
+<label for="sRarity">Редкость</label>
+<select id="sRarity">
+<option value="">—</option>
+<option value="Consumer Grade">Consumer Grade</option>
+<option value="Industrial Grade">Industrial Grade</option>
+<option value="Mil-Spec Grade">Mil-Spec Grade</option>
+<option value="Restricted">Restricted</option>
+<option value="Classified">Classified</option>
+<option value="Covert">Covert</option>
+<option value="Contraband">Contraband</option>
+<option value="Extraordinary">Extraordinary (нож/перчатки)</option>
+</select>
+</div>
+
+<div class="edit-row">
+<div class="edit-field">
+<label for="sWear">Износ</label>
+<select id="sWear">
+<option value="">—</option>
+<option value="FN">Factory New (FN)</option>
+<option value="MW">Minimal Wear (MW)</option>
+<option value="FT">Field-Tested (FT)</option>
+<option value="WW">Well-Worn (WW)</option>
+<option value="BS">Battle-Scarred (BS)</option>
+</select>
+</div>
+<div class="edit-field">
+<label for="sFloat">Float (0.00–1.00)</label>
+<input id="sFloat" type="number" min="0" max="1" step="0.000001" placeholder="0.1834">
+</div>
+</div>
+
+<div class="edit-field edit-checkbox-field">
+<label class="checkbox-label">
+<input id="sStattrak" type="checkbox">
+<span>StatTrak™</span>
+</label>
+</div>
+
+<div class="edit-field">
+<label for="sDescription">Описание (необязательно)</label>
+<input id="sDescription" type="text" maxlength="300" placeholder="Наклейки, паттерн...">
+</div>
+
+<div class="edit-field">
+<label for="sPrice">Цена, COINS</label>
+<input id="sPrice" type="number" min="1" placeholder="5000">
+</div>
+
+<div class="edit-field">
+<label for="sPhoto">Ссылка на фото (необязательно)</label>
+<input id="sPhoto" type="url" placeholder="https://...">
+</div>
+
+<div class="edit-actions">
+<button type="button" id="addSkinCancel">Отмена</button>
+<button type="button" id="addSkinSave" class="save">Выставить</button>
+</div>
+
+<div class="edit-status" id="addSkinStatus"></div>
+</div>
+</div>
+
+<div class="buy-overlay" id="buyOverlay">
+<div class="buy-sheet">
+<img id="buyPhoto" class="buy-photo" alt="" style="display:none;">
+<h2 id="buyTitle">—</h2>
+<div class="buy-price" id="buyPrice">—</div>
+<div class="buy-seller" id="buySeller">—</div>
+<div class="edit-actions">
+<button type="button" id="buyCancel">Отмена</button>
+<button type="button" id="buyConfirm" class="save">Купить</button>
+</div>
+<div class="edit-status" id="buyStatus"></div>
+</div>
+</div>
+
+<div class="edit-overlay" id="inventoryOverlay">
+<div class="edit-sheet inventory-sheet">
+<h2>Инвентарь Steam</h2>
+<div class="edit-status" id="inventoryStatus">Загрузка...</div>
+<div class="inventory-grid" id="inventoryGrid"></div>
+<div class="edit-actions">
+<button type="button" id="inventoryCancel">Закрыть</button>
+</div>
+</div>
+</div>
+
 <script>
-  // ── State ──
-  let tasks = JSON.parse(localStorage.getItem('dd-tasks') || '[]');
-  let selectedCat = 'work';
-  let maxShown = 4;
-  let pendingOnly = false;
-  let lsBg = '#1a1a2e';
+const tg = window.Telegram ? window.Telegram.WebApp : null;
 
-  const quickSuggestions = [
-    { text: 'Morning run', cat: 'health' },
-    { text: 'Team meeting', cat: 'work' },
-    { text: 'Read 20 pages', cat: 'personal' },
-    { text: 'Drink 2L water', cat: 'health' },
-    { text: 'Reply emails', cat: 'work' },
-    { text: 'Grocery shopping', cat: 'personal' },
-    { text: 'Meditate 10 min', cat: 'health' },
-    { text: 'Review project', cat: 'work' },
-    { text: 'Call a friend', cat: 'personal' },
-    { text: 'Evening walk', cat: 'health' },
-  ];
+if (tg) {
+tg.ready();
+tg.expand();
+try { tg.setBackgroundColor('#000000'); } catch(e) {}
+try { tg.setHeaderColor('#000000'); } catch(e) {}
+}
 
-  // ── Navigation ──
-  function goTo(screenId, tabId) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById(screenId).classList.add('active');
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    const tabMap = { 'home-screen': 'tab-home', 'add-screen': 'tab-add', 'settings-screen': 'tab-settings' };
-    const tgt = tabId || tabMap[screenId];
-    if (tgt) document.getElementById(tgt).classList.add('active');
-    if (screenId === 'add-screen') {
-      setTimeout(() => document.getElementById('task-input').focus(), 100);
-    }
-  }
+// ---- read data ----
+const params = new URLSearchParams(window.location.search);
 
-  // ── Category selection ──
-  function selectCat(cat) {
-    selectedCat = cat;
-    ['work', 'personal', 'health'].forEach(c => {
-      const btn = document.getElementById('cat-' + c);
-      btn.className = 'cat-btn' + (c === cat ? ' sel-' + c : '');
-    });
-  }
+const startParam =
+(tg && tg.initDataUnsafe && tg.initDataUnsafe.start_param) ||
+params.get('tgWebAppStartParam') ||
+params.get('end_time');
 
-  // ── Add task ──
-  function addTask() {
-    const input = document.getElementById('task-input');
-    const text = input.value.trim();
-    if (!text) return;
-    tasks.push({ id: Date.now(), text, cat: selectedCat, done: false, createdAt: new Date().toISOString() });
-    save();
-    render();
-    input.value = '';
-    goTo('home-screen');
-  }
+const title = params.get('title');
+const subtitle = params.get('subtitle');
+const prize = params.get('prize');
+const joinUrl = params.get('join_url') || 'https://t.me/JaydenSullivan';
 
-  // ── Toggle done ──
-  function toggleTask(id) {
-    const t = tasks.find(t => t.id === id);
-    if (t) { t.done = !t.done; save(); render(); }
-  }
+const COIN_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5c0-1 1-1.8 2.5-1.8s2.5.7 2.5 1.7c0 2.3-5 1.3-5 3.6 0 1 1 1.8 2.5 1.8s2.5-.8 2.5-1.8"/></svg>';
+const LOCK_ICON = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-1px"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+const TARGET_ICON = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>';
 
-  // ── Delete ──
-  function deleteTask(id) {
-    tasks = tasks.filter(t => t.id !== id);
-    save(); render();
-  }
+function showPlaceholderIcon(img){
+const div = document.createElement('div');
+div.className = 'skin-photo placeholder';
+div.innerHTML = TARGET_ICON;
+img.replaceWith(div);
+}
 
-  // ── Clear all ──
-  function clearAll() {
-    if (confirm('Clear all plans for today?')) { tasks = []; save(); render(); }
-  }
+if (title){
+document.getElementById('title').textContent = title;
+document.getElementById('title').setAttribute('data-text', title);
+}
+if (subtitle) document.getElementById('subtitle').textContent = subtitle;
+if (prize) document.getElementById('prize').innerHTML = COIN_ICON + ' <b>' + prize + '</b>';
 
-  // ── Toggle pending only ──
-  function togglePending() {
-    pendingOnly = !pendingOnly;
-    const track = document.getElementById('toggle-pending');
-    track.classList.toggle('on', pendingOnly);
-    render();
-  }
+let endTime = startParam ? parseInt(startParam, 10) * 1000 : (Date.now() + 10 * 60 * 1000);
+let totalDuration = Math.max(1, endTime - Date.now());
 
-  // ── Theme ──
-  function setTheme(name, color, btnId) {
-    lsBg = color;
-    document.getElementById('ls-bg').style.background = color;
-    document.querySelectorAll('.theme-card').forEach(c => c.classList.remove('selected'));
-    document.getElementById(btnId).classList.add('selected');
-  }
+// Адрес бота на Railway — сюда мини-апп ходит за живыми данными
+// розыгрыша и сюда же сохраняет правки из формы редактирования.
+const API_BASE = 'https://telegram-countdown-bot-production-fe81.up.railway.app';
 
-  // ── Save ──
-  function save() {
-    localStorage.setItem('dd-tasks', JSON.stringify(tasks));
-  }
+const clockEl = document.getElementById('clock');
+const ringEl = document.getElementById('ring');
+const startedBadge = document.getElementById('startedBadge');
+const labelDays = document.getElementById('labelDays');
+const ctaBtn = document.getElementById('ctaBtn');
+const RING_LEN = 578; // 2 * PI * 92, rounded
 
-  // ── Render ──
-  function render() {
-    const total = tasks.length;
-    const done = tasks.filter(t => t.done).length;
-    const pct = total ? Math.round(done / total * 100) : 0;
+function pad(n){ return n.toString().padStart(2,'0'); }
 
-    // Stats row
-    document.getElementById('stat-total').textContent = total;
-    document.getElementById('stat-done').textContent = done;
-    document.getElementById('stat-left').textContent = total - done;
+function render(){
+const now = Date.now();
+const remainingMs = endTime - now;
 
-    // Ring
-    const circ = 113.1;
-    document.getElementById('ring-arc').style.strokeDashoffset = circ - (circ * pct / 100);
-    document.getElementById('ring-pct').textContent = pct + '%';
-    document.getElementById('prog-count').textContent = done + ' done';
-    document.getElementById('prog-label').textContent = total
-      ? (total - done) + ' remaining today'
-      : 'Add plans to get started';
+if (remainingMs <= 0){
+clockEl.style.display = 'none';
+document.querySelector('.time-labels').style.display = 'none';
+startedBadge.style.display = 'block';
+ringEl.setAttribute('stroke-dashoffset', '0');
+ctaBtn.textContent = 'Открыть канал';
+ctaBtn.classList.add('live');
+clearInterval(timerId);
+return;
+}
 
-    // Task list
-    const list = document.getElementById('task-list');
-    const empty = document.getElementById('empty-state');
-    if (total === 0) {
-      list.innerHTML = '';
-      empty.style.display = 'block';
-    } else {
-      empty.style.display = 'none';
-      list.innerHTML = tasks.map(t => `
-        <div class="task-item ${t.done ? 'done' : ''}" onclick="toggleTask(${t.id})">
-          <div class="task-check ${t.done ? 'checked' : ''}">
-            ${t.done ? '<i class="ti ti-check"></i>' : ''}
-          </div>
-          <span class="task-text">${escHtml(t.text)}</span>
-          <span class="task-tag tag-${t.cat}">${t.cat}</span>
-          <button class="task-del" onclick="event.stopPropagation(); deleteTask(${t.id})" aria-label="Delete">
-            <i class="ti ti-x"></i>
-          </button>
-        </div>
-      `).join('');
-    }
+const totalSeconds = Math.floor(remainingMs / 1000);
+const days = Math.floor(totalSeconds / 86400);
+const hours = Math.floor((totalSeconds % 86400) / 3600);
+const minutes = Math.floor((totalSeconds % 3600) / 60);
+const seconds = totalSeconds % 60;
 
-    // Lock screen
-    const toShow = tasks
-      .filter(t => pendingOnly ? !t.done : true)
-      .slice(0, maxShown);
+if (days > 0){
+labelDays.style.display = 'inline';
+clockEl.textContent = `${days}д ${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+} else {
+clockEl.textContent = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+}
 
-    document.getElementById('ls-preview').innerHTML = toShow.length
-      ? toShow.map(t => `
-          <div class="ls-task-row ${t.done ? 'done' : ''}">
-            <span class="ls-dot ${t.done ? 'faded' : t.cat}"></span>
-            ${escHtml(t.text)}
-          </div>
-        `).join('')
-      : '<div style="font-size:12px;color:rgba(255,255,255,0.4);padding:4px 0;">No plans yet</div>';
+const progress = Math.max(0, Math.min(1, remainingMs / totalDuration));
+ringEl.setAttribute('stroke-dashoffset', String(RING_LEN * (1 - progress)));
+}
 
-    document.getElementById('ls-fill').style.width = pct + '%';
-    document.getElementById('ls-stat').textContent = done + ' / ' + total + ' done';
-  }
+render();
+const timerId = setInterval(render, 1000);
 
-  function escHtml(s) {
-    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
+ctaBtn.addEventListener('click', () => {
+if (tg && tg.openTelegramLink) {
+tg.openTelegramLink(joinUrl);
+} else {
+window.open(joinUrl, '_blank');
+}
+});
 
-  // ── Quick grid ──
-  function renderQuick() {
-    document.getElementById('quick-grid').innerHTML = quickSuggestions.map(s => `
-      <button class="quick-chip" onclick="
-        document.getElementById('task-input').value='${s.text.replace(/'/g,"\\'")}';
-        selectCat('${s.cat}');
-      ">${s.text}</button>
-    `).join('');
-  }
+// ---- matrix-style digital rain (red, echoes the DGhost brand art) ----
+const canvas = document.getElementById('rain');
+const ctx = canvas.getContext('2d');
+let w, h, columns, drops;
+const CHARS = '01';
+const FONT_SIZE = 15;
 
-  // ── Clock ──
-  function updateClock() {
-    const now = new Date();
-    const h = String(now.getHours()).padStart(2, '0');
-    const m = String(now.getMinutes()).padStart(2, '0');
-    document.getElementById('ls-clock').textContent = h + ':' + m;
-    const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-    document.getElementById('ls-date').textContent =
-      `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`;
-  }
+function setupRain(){
+w = canvas.width = window.innerWidth;
+h = canvas.height = window.innerHeight;
+columns = Math.floor(w / FONT_SIZE);
+drops = new Array(columns).fill(0).map(() => Math.random() * -100);
+}
+setupRain();
+window.addEventListener('resize', setupRain);
 
-  // ── Init ──
-  updateClock();
-  setInterval(updateClock, 30000);
-  render();
-  renderQuick();
+function drawRain(){
+ctx.fillStyle = 'rgba(0,0,0,0.13)';
+ctx.fillRect(0, 0, w, h);
+ctx.font = FONT_SIZE + 'px monospace';
+
+for (let i = 0; i < columns; i++){
+const char = CHARS[Math.floor(Math.random() * CHARS.length)];
+const x = i * FONT_SIZE;
+const y = drops[i] * FONT_SIZE;
+const isHead = Math.random() > 0.94;
+
+ctx.fillStyle = isHead ? '#ff8a95' : 'rgba(255,31,61,0.55)';
+ctx.fillText(char, x, y);
+
+if (y > h && Math.random() > 0.975){
+drops[i] = 0;
+}
+drops[i]++;
+}
+}
+setInterval(drawRain, 60);
+
+// ============================================================
+// ЖИВЫЕ ДАННЫЕ РОЗЫГРЫША + РЕДАКТИРОВАНИЕ (только для админа)
+// ============================================================
+
+const editFab = document.getElementById('editFab');
+const editOverlay = document.getElementById('editOverlay');
+const editCancel = document.getElementById('editCancel');
+const editSave = document.getElementById('editSave');
+const editStatus = document.getElementById('editStatus');
+const fTitle = document.getElementById('fTitle');
+const fSubtitle = document.getElementById('fSubtitle');
+const fPrize = document.getElementById('fPrize');
+const fMinutes = document.getElementById('fMinutes');
+
+function applyGiveawayState(data){
+if (!data) return;
+
+if (data.title){
+document.getElementById('title').textContent = data.title;
+document.getElementById('title').setAttribute('data-text', data.title);
+fTitle.value = data.title;
+}
+if (data.subtitle){
+document.getElementById('subtitle').textContent = data.subtitle;
+fSubtitle.value = data.subtitle;
+}
+if (data.prize){
+document.getElementById('prize').innerHTML = COIN_ICON + ' <b>' + data.prize + '</b>';
+fPrize.value = data.prize;
+}
+if (data.end_time){
+endTime = data.end_time * 1000;
+totalDuration = Math.max(1, endTime - Date.now());
+// сброс "СТАРТ!"-состояния, если время снова в будущем
+if (endTime - Date.now() > 0){
+clockEl.style.display = '';
+document.querySelector('.time-labels').style.display = '';
+startedBadge.style.display = 'none';
+ctaBtn.textContent = 'Участвовать';
+ctaBtn.classList.remove('live');
+if (typeof timerId !== 'undefined') clearInterval(timerId);
+window.timerId = setInterval(render, 1000);
+}
+}
+render();
+}
+
+// Подтягиваем реальное состояние розыгрыша (переопределяет
+// значения из URL — они могли устареть, если ссылка старая)
+fetch(API_BASE + '/api/giveaway')
+.then(r => r.json())
+.then(applyGiveawayState)
+.catch(() => {
+// сервер бота недоступен — остаёмся на значениях из URL
+});
+
+// Админ-статус и баланс теперь приходят из loadMe() (см. ниже) —
+// оттуда же управляется видимость кнопки ✎ через updateFabVisibility().
+
+editFab.addEventListener('click', () => {
+editOverlay.classList.add('show');
+editStatus.textContent = '';
+});
+
+editCancel.addEventListener('click', () => {
+editOverlay.classList.remove('show');
+});
+
+editSave.addEventListener('click', () => {
+
+if (!tg || !tg.initData){
+editStatus.textContent = 'Открой мини-апп из Telegram, не в браузере.';
+return;
+}
+
+editSave.disabled = true;
+editStatus.textContent = 'Сохраняю...';
+
+fetch(API_BASE + '/api/giveaway', {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({
+init_data: tg.initData,
+title: fTitle.value.trim(),
+subtitle: fSubtitle.value.trim(),
+prize: fPrize.value.trim(),
+minutes: fMinutes.value ? Number(fMinutes.value) : null,
+})
+})
+.then(async r => {
+if (!r.ok){
+if (r.status === 401 || r.status === 403){
+throw new Error('Нет доступа — открой мини-апп через кнопку бота.');
+}
+throw new Error('Ошибка сохранения (' + r.status + ')');
+}
+return r.json();
+})
+.then(data => {
+applyGiveawayState(data);
+editStatus.textContent = 'Сохранено ✓';
+setTimeout(() => { editOverlay.classList.remove('show'); }, 600);
+})
+.catch(err => {
+editStatus.textContent = err.message || 'Ошибка сохранения.';
+})
+.finally(() => {
+editSave.disabled = false;
+});
+});
+
+// ============================================================
+// ВКЛАДКИ (ТАЙМЕР / МАГАЗИН / ПРОФИЛЬ)
+// ============================================================
+
+const tabTimerBtn = document.getElementById('tabTimerBtn');
+const tabShopBtn = document.getElementById('tabShopBtn');
+const tabProfileBtn = document.getElementById('tabProfileBtn');
+const screenTimer = document.getElementById('screenTimer');
+const screenShop = document.getElementById('screenShop');
+const screenProfile = document.getElementById('screenProfile');
+
+let isAdmin = false;
+let currentUserId = null;
+let currentTab = 'shop';
+
+function showAlert(message){
+if (tg && tg.showAlert){ tg.showAlert(message); }
+else { alert(message); }
+}
+
+function showConfirm(message, onOk){
+if (tg && tg.showConfirm){ tg.showConfirm(message, ok => { if (ok) onOk(); }); }
+else if (confirm(message)) { onOk(); }
+}
+
+function updateFabVisibility(){
+if (isAdmin && currentTab === 'timer'){ editFab.classList.add('show'); }
+else { editFab.classList.remove('show'); }
+}
+
+function switchTab(name){
+currentTab = name;
+screenTimer.style.display = name === 'timer' ? '' : 'none';
+screenShop.style.display = name === 'shop' ? 'block' : 'none';
+screenProfile.style.display = name === 'profile' ? 'block' : 'none';
+tabTimerBtn.classList.toggle('active', name === 'timer');
+tabShopBtn.classList.toggle('active', name === 'shop');
+tabProfileBtn.classList.toggle('active', name === 'profile');
+updateFabVisibility();
+if (name === 'shop'){
+loadMe();
+loadSkins();
+} else if (name === 'profile'){
+loadProfile();
+}
+}
+
+tabTimerBtn.addEventListener('click', () => switchTab('timer'));
+tabShopBtn.addEventListener('click', () => switchTab('shop'));
+tabProfileBtn.addEventListener('click', () => switchTab('profile'));
+
+// Аватар Telegram-пользователя в нижней навигации, если доступен
+if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.photo_url){
+document.getElementById('navAvatarIcon').innerHTML =
+`<img src="${tg.initDataUnsafe.user.photo_url}" alt="">`;
+}
+
+// ============================================================
+// МАГАЗИН СКИНОВ
+// ============================================================
+
+const balancePill = document.getElementById('balancePill');
+const skinsList = document.getElementById('skinsList');
+const addSkinBtn = document.getElementById('addSkinBtn');
+const addSkinOverlay = document.getElementById('addSkinOverlay');
+const addSkinCancel = document.getElementById('addSkinCancel');
+const addSkinSave = document.getElementById('addSkinSave');
+const addSkinStatus = document.getElementById('addSkinStatus');
+const sTitle = document.getElementById('sTitle');
+const sDescription = document.getElementById('sDescription');
+const sPrice = document.getElementById('sPrice');
+const sPhoto = document.getElementById('sPhoto');
+const sWeaponType = document.getElementById('sWeaponType');
+const sWear = document.getElementById('sWear');
+const sRarity = document.getElementById('sRarity');
+const sFloat = document.getElementById('sFloat');
+const sStattrak = document.getElementById('sStattrak');
+
+const skinSearch = document.getElementById('skinSearch');
+const skinSort = document.getElementById('skinSort');
+
+const buyOverlay = document.getElementById('buyOverlay');
+const buyPhoto = document.getElementById('buyPhoto');
+const buyTitle = document.getElementById('buyTitle');
+const buyPrice = document.getElementById('buyPrice');
+const buySeller = document.getElementById('buySeller');
+const buyCancel = document.getElementById('buyCancel');
+const buyConfirm = document.getElementById('buyConfirm');
+const buyStatus = document.getElementById('buyStatus');
+
+let pendingBuySkin = null;
+
+const WEAR_LABELS = { FN: 'FN', MW: 'MW', FT: 'FT', WW: 'WW', BS: 'BS' };
+
+const ERROR_MESSAGES = {
+unauthorized: 'Открой мини-апп через Telegram, а не в браузере.',
+not_available: 'Этот скин уже продан или снят с продажи.',
+own_listing: 'Нельзя купить собственный лот.',
+insufficient_funds: 'Недостаточно COINS на балансе.',
+race_lost: 'Кто-то купил этот скин на секунду раньше.',
+forbidden: 'Можно снять только свой лот.',
+not_found: 'Лот не найден.',
+invalid: 'Проверь название и цену.',
+};
+
+function errorMessage(code){
+return ERROR_MESSAGES[code] || 'Что-то пошло не так, попробуй ещё раз.';
+}
+
+function formatCoins(n){
+return Number(n || 0).toLocaleString('ru-RU') + ' COINS';
+}
+
+let hasSteamLink = false;
+
+function updateSteamBlockVisibility(){
+document.getElementById('steamLinkBlock').style.display = hasSteamLink ? 'none' : 'block';
+document.getElementById('steamInventoryBlock').style.display = hasSteamLink ? 'block' : 'none';
+}
+
+function loadMe(){
+if (!tg || !tg.initData){
+document.getElementById('balanceAmount').textContent = '—';
+return;
+}
+fetch(API_BASE + '/api/me?init_data=' + encodeURIComponent(tg.initData))
+.then(r => r.json())
+.then(data => {
+if (!data || data.error) return;
+document.getElementById('balanceAmount').textContent = formatCoins(data.available);
+isAdmin = !!data.is_admin;
+currentUserId = data.user_id;
+hasSteamLink = !!data.has_steam_link;
+updateFabVisibility();
+updateSteamBlockVisibility();
+})
+.catch(() => {
+document.getElementById('balanceAmount').textContent = '—';
+});
+}
+
+function loadProfile(){
+const profileAvatar = document.getElementById('profileAvatar');
+const profileName = document.getElementById('profileName');
+const profileBalanceAmount = document.getElementById('profileBalanceAmount');
+const profileHeld = document.getElementById('profileHeld');
+
+if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.photo_url){
+profileAvatar.innerHTML = `<img src="${tg.initDataUnsafe.user.photo_url}" alt="">`;
+}
+
+if (!tg || !tg.initData){
+profileName.textContent = 'Открой через Telegram';
+profileBalanceAmount.textContent = '—';
+return;
+}
+
+fetch(API_BASE + '/api/profile?init_data=' + encodeURIComponent(tg.initData))
+.then(async r => {
+if (!r.ok) throw new Error();
+return r.json();
+})
+.then(data => {
+if (!data || data.error) throw new Error();
+
+isAdmin = !!data.is_admin;
+currentUserId = data.user_id;
+hasSteamLink = !!data.has_steam_link;
+updateFabVisibility();
+updateSteamBlockVisibility();
+updateProfileSteamBlock();
+
+profileName.textContent = data.username || ('ID ' + data.user_id);
+profileBalanceAmount.textContent = formatCoins(data.available);
+profileHeld.innerHTML = data.held > 0
+? (LOCK_ICON + ' В холде: ' + formatCoins(data.held))
+: '';
+
+document.getElementById('statSold').textContent = data.sold_count;
+document.getElementById('statBought').textContent = data.bought_count;
+document.getElementById('statActive').textContent = data.active_count;
+})
+.catch(() => {
+profileName.textContent = 'Не удалось загрузить';
+profileBalanceAmount.textContent = '—';
+});
+
+loadDeals();
+}
+
+// ============================================================
+// МОИ СДЕЛКИ (трекинг без кастодии)
+// ============================================================
+
+function dealCardHtml(deal){
+const photo = deal.photo_url
+? `<img class="deal-photo" src="${deal.photo_url}" alt="">`
+: `<div class="deal-photo" style="display:flex;align-items:center;justify-content:center;">${TARGET_ICON}</div>`;
+
+let statusHtml = '';
+let actionHtml = '';
+
+if (deal.role === 'selling'){
+if (deal.sent_at){
+statusHtml = '<div class="deal-status sent">Отправлено, ждём холд</div>';
+} else {
+statusHtml = '<div class="deal-status pending">Нужно отправить</div>';
+actionHtml = `<button class="deal-action" data-mark-sent="${deal.id}" type="button">Отправил</button>`;
+}
+} else {
+if (deal.confirmed_at){
+statusHtml = '<div class="deal-status done">Подтверждено</div>';
+} else if (deal.sent_at){
+statusHtml = '<div class="deal-status sent">Продавец отправил</div>';
+actionHtml = `<button class="deal-action" data-mark-received="${deal.id}" type="button">Получил</button>`;
+} else {
+statusHtml = '<div class="deal-status pending">Ждём отправки</div>';
+}
+}
+
+const roleLabel = deal.role === 'selling' ? 'Продаю' : 'Покупаю';
+const counterparty = deal.counterparty || 'аноним';
+
+return `
+<div class="deal-card">
+${photo}
+<div class="deal-info">
+<div class="deal-title">${escapeHtml(deal.title)}</div>
+<div class="deal-meta">${roleLabel} · ${escapeHtml(counterparty)} · ${formatCoins(deal.price)}</div>
+${statusHtml}
+</div>
+${actionHtml}
+</div>`;
+}
+
+let lastDeals = [];
+
+function loadDeals(){
+const dealsList = document.getElementById('dealsList');
+if (!tg || !tg.initData){
+dealsList.innerHTML = '<div class="skins-empty" style="padding:16px 4px;">Открой через Telegram</div>';
+return;
+}
+fetch(API_BASE + '/api/deals?init_data=' + encodeURIComponent(tg.initData))
+.then(r => r.json())
+.then(data => {
+lastDeals = (data && data.items) || [];
+if (!lastDeals.length){
+dealsList.innerHTML = '<div class="skins-empty" style="padding:16px 4px;">Активных сделок нет</div>';
+return;
+}
+dealsList.innerHTML = lastDeals.map(dealCardHtml).join('');
+})
+.catch(() => {
+dealsList.innerHTML = '<div class="skins-empty" style="padding:16px 4px;">Не удалось загрузить</div>';
+});
+}
+
+document.getElementById('dealsList').addEventListener('click', (e) => {
+const sentBtn = e.target.closest('[data-mark-sent]');
+const receivedBtn = e.target.closest('[data-mark-received]');
+
+if (sentBtn){
+const id = sentBtn.dataset.markSent;
+showConfirm('Отметить, что скин отправлен покупателю?', () => {
+fetch(API_BASE + '/api/skins/' + id + '/mark_sent', {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({ init_data: tg.initData })
+})
+.then(r => { if (!r.ok) throw new Error(); return r.json(); })
+.then(() => loadDeals())
+.catch(() => showAlert('Не удалось обновить статус.'));
+});
+}
+
+if (receivedBtn){
+const id = receivedBtn.dataset.markReceived;
+showConfirm('Подтвердить получение? Продавцу сразу зачислятся деньги.', () => {
+fetch(API_BASE + '/api/skins/' + id + '/mark_received', {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({ init_data: tg.initData })
+})
+.then(r => { if (!r.ok) throw new Error(); return r.json(); })
+.then(() => loadDeals())
+.catch(() => showAlert('Не удалось обновить статус.'));
+});
+}
+});
+
+const RARITY_CLASS = {
+'Consumer Grade': 'rarity-consumer',
+'Industrial Grade': 'rarity-industrial',
+'Mil-Spec Grade': 'rarity-milspec',
+'Restricted': 'rarity-restricted',
+'Classified': 'rarity-classified',
+'Covert': 'rarity-covert',
+'Contraband': 'rarity-contraband',
+'Extraordinary': 'rarity-extraordinary',
+};
+
+function skinCardHtml(skin){
+const photo = skin.photo_url
+? `<img class="skin-photo" src="${skin.photo_url}" alt="" onerror="showPlaceholderIcon(this)">`
+: `<div class="skin-photo placeholder">${TARGET_ICON}</div>`;
+
+const wearBadge = skin.wear && WEAR_LABELS[skin.wear]
+? `<div class="skin-badge wear">${WEAR_LABELS[skin.wear]}</div>`
+: '';
+
+const stBadge = skin.stattrak
+? `<div class="skin-badge stattrak">ST™</div>`
+: '';
+
+const rarityClass = RARITY_CLASS[skin.rarity] || '';
+
+const isOwn = currentUserId && skin.seller_id === currentUserId;
+
+const actionBtn = isOwn
+? `<button class="skin-action own" data-cancel="${skin.id}" type="button">Снять</button>`
+: `<button class="skin-action" data-buy="${skin.id}" type="button">Купить</button>`;
+
+const weaponType = skin.weapon_type
+? `<div class="skin-weapon-type">${escapeHtml(skin.weapon_type)}</div>`
+: '';
+
+const floatLine = (skin.float_value !== null && skin.float_value !== undefined)
+? `<div class="skin-float">Float: ${Number(skin.float_value).toFixed(4)}</div>`
+: '';
+
+const title = skin.stattrak
+? `StatTrak™ ${escapeHtml(skin.title)}`
+: escapeHtml(skin.title);
+
+return `
+<div class="skin-card ${rarityClass}">
+<div class="skin-photo-wrap">
+${photo}
+${wearBadge}
+${stBadge}
+</div>
+${weaponType}
+<div class="skin-title">${title}</div>
+${floatLine}
+<div class="skin-seller">${escapeHtml(skin.seller_username || 'аноним')}</div>
+<div class="skin-price">${formatCoins(skin.price)}</div>
+${actionBtn}
+</div>`;
+}
+
+function escapeHtml(str){
+const div = document.createElement('div');
+div.textContent = str == null ? '' : String(str);
+return div.innerHTML;
+}
+
+let lastSkins = [];
+
+function applyFiltersAndRender(){
+const q = skinSearch.value.trim().toLowerCase();
+const sort = skinSort.value;
+
+let filtered = lastSkins;
+
+if (q){
+filtered = filtered.filter(s =>
+(s.title || '').toLowerCase().includes(q) ||
+(s.weapon_type || '').toLowerCase().includes(q)
+);
+}
+
+filtered = filtered.slice();
+
+if (sort === 'price_asc'){
+filtered.sort((a, b) => a.price - b.price);
+} else if (sort === 'price_desc'){
+filtered.sort((a, b) => b.price - a.price);
+} else {
+filtered.sort((a, b) => b.id - a.id);
+}
+
+if (!filtered.length){
+skinsList.innerHTML = `<div class="skins-empty">${lastSkins.length ? 'Ничего не нашлось' : 'Пока нет лотов — стань первым'}</div>`;
+return;
+}
+
+skinsList.innerHTML = filtered.map(skinCardHtml).join('');
+}
+
+function renderSkins(list){
+lastSkins = list || [];
+applyFiltersAndRender();
+}
+
+function loadSkins(){
+fetch(API_BASE + '/api/skins')
+.then(r => r.json())
+.then(renderSkins)
+.catch(() => {
+skinsList.innerHTML = '<div class="skins-empty">Не удалось загрузить каталог.</div>';
+});
+}
+
+skinSearch.addEventListener('input', applyFiltersAndRender);
+skinSort.addEventListener('change', applyFiltersAndRender);
+
+skinsList.addEventListener('click', (e) => {
+const buyBtn = e.target.closest('[data-buy]');
+if (buyBtn){
+const skin = lastSkins.find(s => String(s.id) === buyBtn.dataset.buy);
+if (skin) openBuySheet(skin);
+return;
+}
+const cancelBtn = e.target.closest('[data-cancel]');
+if (cancelBtn){
+cancelListing(Number(cancelBtn.dataset.cancel));
+}
+});
+
+function openBuySheet(skin){
+if (!tg || !tg.initData){
+showAlert(errorMessage('unauthorized'));
+return;
+}
+pendingBuySkin = skin;
+if (skin.photo_url){
+buyPhoto.src = skin.photo_url;
+buyPhoto.style.display = '';
+} else {
+buyPhoto.removeAttribute('src');
+buyPhoto.style.display = 'none';
+}
+
+let titleText = skin.stattrak ? 'StatTrak™ ' + skin.title : skin.title;
+if (skin.wear && WEAR_LABELS[skin.wear]) titleText += ' (' + WEAR_LABELS[skin.wear] + ')';
+buyTitle.textContent = titleText;
+
+buyPrice.textContent = formatCoins(skin.price);
+
+let sellerText = 'Продавец: ' + (skin.seller_username || 'аноним');
+if (skin.float_value !== null && skin.float_value !== undefined){
+sellerText += ' · Float: ' + Number(skin.float_value).toFixed(4);
+}
+buySeller.textContent = sellerText;
+
+buyStatus.textContent = '';
+buyOverlay.classList.add('show');
+}
+
+buyCancel.addEventListener('click', () => {
+buyOverlay.classList.remove('show');
+pendingBuySkin = null;
+});
+
+buyConfirm.addEventListener('click', () => {
+if (!pendingBuySkin || !tg || !tg.initData) return;
+
+const skinId = pendingBuySkin.id;
+buyConfirm.disabled = true;
+buyStatus.textContent = 'Покупаю...';
+
+fetch(API_BASE + '/api/skins/' + skinId + '/buy', {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({ init_data: tg.initData })
+})
+.then(async r => {
+if (!r.ok){
+const data = await r.json().catch(() => ({}));
+throw new Error(errorMessage(data.error));
+}
+return r.json();
+})
+.then(() => {
+buyStatus.textContent = 'Куплено ✓';
+loadMe();
+loadSkins();
+setTimeout(() => {
+buyOverlay.classList.remove('show');
+pendingBuySkin = null;
+}, 700);
+})
+.catch(err => {
+buyStatus.textContent = err.message;
+})
+.finally(() => {
+buyConfirm.disabled = false;
+});
+});
+
+function cancelListing(skinId){
+if (!tg || !tg.initData){
+showAlert(errorMessage('unauthorized'));
+return;
+}
+showConfirm('Снять этот лот с продажи?', () => {
+fetch(API_BASE + '/api/skins/' + skinId + '/cancel', {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({ init_data: tg.initData })
+})
+.then(async r => {
+if (!r.ok){
+const data = await r.json().catch(() => ({}));
+throw new Error(errorMessage(data.error));
+}
+loadSkins();
+})
+.catch(err => showAlert(err.message));
+});
+}
+
+// ============================================================
+// STEAM — ТРЕЙД-ССЫЛКА И ИНВЕНТАРЬ
+// ============================================================
+
+const openInventoryBtn = document.getElementById('openInventoryBtn');
+
+const inventoryOverlay = document.getElementById('inventoryOverlay');
+const inventoryGrid = document.getElementById('inventoryGrid');
+const inventoryStatus = document.getElementById('inventoryStatus');
+const inventoryCancel = document.getElementById('inventoryCancel');
+
+const pTradeLink = document.getElementById('pTradeLink');
+const profileLinkBtn = document.getElementById('profileLinkBtn');
+const profileRelinkBtn = document.getElementById('profileRelinkBtn');
+const profileSteamStatus = document.getElementById('profileSteamStatus');
+const profileSteamLinked = document.getElementById('profileSteamLinked');
+const profileSteamUnlinked = document.getElementById('profileSteamUnlinked');
+
+const STEAM_ERROR_MESSAGES = {
+bad_trade_link: 'Не похоже на трейд-ссылку — проверь, что скопировал целиком.',
+not_linked: 'Сначала привяжи трейд-ссылку.',
+inventory_private: 'Инвентарь закрыт. В настройках приватности Steam выставь инвентарь на "Открытый".',
+inventory_private_or_empty: 'Инвентарь закрыт или пуст (или в нём нет предметов CS2).',
+steam_unavailable: 'Сервис инвентаря сейчас не отвечает, попробуй чуть позже.',
+rate_limited: 'Слишком много запросов, подожди немного и попробуй снова.',
+not_configured: 'Инвентарь Steam ещё не настроен на сервере — сообщи админу.',
+};
+
+function steamErrorMessage(code){
+return STEAM_ERROR_MESSAGES[code] || errorMessage(code);
+}
+
+function updateProfileSteamBlock(){
+profileSteamLinked.style.display = hasSteamLink ? 'block' : 'none';
+profileSteamUnlinked.style.display = hasSteamLink ? 'none' : 'block';
+}
+
+function submitTradeLink(){
+if (!tg || !tg.initData){
+profileSteamStatus.textContent = errorMessage('unauthorized');
+return;
+}
+const link = pTradeLink.value.trim();
+if (!link){
+profileSteamStatus.textContent = 'Вставь трейд-ссылку.';
+return;
+}
+profileLinkBtn.disabled = true;
+profileSteamStatus.textContent = 'Привязываю...';
+fetch(API_BASE + '/api/steam/link', {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({ init_data: tg.initData, trade_link: link })
+})
+.then(async r => {
+if (!r.ok){
+const data = await r.json().catch(() => ({}));
+throw new Error(steamErrorMessage(data.error));
+}
+return r.json();
+})
+.then(() => {
+hasSteamLink = true;
+profileSteamStatus.textContent = 'Привязано ✓';
+pTradeLink.value = '';
+setTimeout(() => {
+updateProfileSteamBlock();
+updateSteamBlockVisibility();
+profileSteamStatus.textContent = '';
+}, 500);
+})
+.catch(err => {
+profileSteamStatus.textContent = err.message;
+})
+.finally(() => {
+profileLinkBtn.disabled = false;
+});
+}
+
+profileLinkBtn.addEventListener('click', submitTradeLink);
+
+profileRelinkBtn.addEventListener('click', () => {
+profileSteamLinked.style.display = 'none';
+profileSteamUnlinked.style.display = 'block';
+});
+
+// ============================================================
+// ВЫВОД СРЕДСТВ
+// ============================================================
+
+const wAmount = document.getElementById('wAmount');
+const wDetails = document.getElementById('wDetails');
+const withdrawSubmitBtn = document.getElementById('withdrawSubmitBtn');
+const withdrawStatus = document.getElementById('withdrawStatus');
+
+const WITHDRAW_ERROR_MESSAGES = {
+no_payment_details: 'Укажи карту или номер Payme/Click.',
+below_minimum: 'Сумма меньше минимальной для вывода.',
+insufficient_funds: 'Недостаточно средств на балансе.',
+};
+
+withdrawSubmitBtn.addEventListener('click', () => {
+if (!tg || !tg.initData){
+withdrawStatus.textContent = errorMessage('unauthorized');
+return;
+}
+
+const amount = Number(wAmount.value);
+const details = wDetails.value.trim();
+
+if (!amount || amount <= 0){
+withdrawStatus.textContent = 'Укажи сумму.';
+return;
+}
+if (!details){
+withdrawStatus.textContent = 'Укажи карту или номер Payme/Click.';
+return;
+}
+
+withdrawSubmitBtn.disabled = true;
+withdrawStatus.textContent = 'Отправляю заявку...';
+
+fetch(API_BASE + '/api/withdraw', {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({
+init_data: tg.initData,
+amount: amount,
+payment_details: details,
+})
+})
+.then(async r => {
+if (!r.ok){
+const data = await r.json().catch(() => ({}));
+throw new Error(WITHDRAW_ERROR_MESSAGES[data.error] || errorMessage(data.error));
+}
+return r.json();
+})
+.then(data => {
+withdrawStatus.textContent = `Заявка #${data.id} отправлена ✓ Ожидай перевод.`;
+wAmount.value = '';
+wDetails.value = '';
+loadProfile();
+})
+.catch(err => {
+withdrawStatus.textContent = err.message;
+})
+.finally(() => {
+withdrawSubmitBtn.disabled = false;
+});
+});
+
+function renderInventory(items){
+if (!items || !items.length){
+inventoryStatus.textContent = 'В инвентаре нет предметов CS2 (или они не отображаются).';
+inventoryGrid.innerHTML = '';
+return;
+}
+inventoryStatus.textContent = '';
+inventoryGrid.innerHTML = items.map((item, i) => {
+const photo = item.photo_url
+? `<img src="${item.photo_url}" alt="">`
+: '';
+const wearText = item.wear ? WEAR_LABELS[item.wear] || '' : '';
+const stText = item.stattrak ? 'ST™ ' : '';
+return `
+<div class="inv-item" data-idx="${i}">
+${photo}
+<div class="inv-item-name">${stText}${escapeHtml(item.title)}</div>
+${wearText ? `<div class="inv-item-wear">${wearText}</div>` : ''}
+</div>`;
+}).join('');
+}
+
+let lastInventoryItems = [];
+
+openInventoryBtn.addEventListener('click', () => {
+if (!tg || !tg.initData) return;
+inventoryOverlay.classList.add('show');
+inventoryStatus.textContent = 'Загрузка...';
+inventoryGrid.innerHTML = '';
+fetch(API_BASE + '/api/steam/inventory?init_data=' + encodeURIComponent(tg.initData))
+.then(async r => {
+if (!r.ok){
+const data = await r.json().catch(() => ({}));
+throw new Error(steamErrorMessage(data.error));
+}
+return r.json();
+})
+.then(data => {
+lastInventoryItems = data.items || [];
+renderInventory(lastInventoryItems);
+})
+.catch(err => {
+inventoryStatus.textContent = err.message;
+});
+});
+
+inventoryCancel.addEventListener('click', () => {
+inventoryOverlay.classList.remove('show');
+});
+
+inventoryGrid.addEventListener('click', (e) => {
+const card = e.target.closest('.inv-item');
+if (!card) return;
+const item = lastInventoryItems[Number(card.dataset.idx)];
+if (!item) return;
+
+sTitle.value = item.title || '';
+sWeaponType.value = item.weapon_type || '';
+sWear.value = item.wear || '';
+sRarity.value = item.rarity || '';
+sStattrak.checked = !!item.stattrak;
+if (item.photo_url) sPhoto.value = item.photo_url;
+if (item.float_value !== null && item.float_value !== undefined){
+sFloat.value = item.float_value;
+}
+
+inventoryOverlay.classList.remove('show');
+});
+
+addSkinBtn.addEventListener('click', () => {
+if (!tg || !tg.initData){
+showAlert(errorMessage('unauthorized'));
+return;
+}
+addSkinStatus.textContent = '';
+updateSteamBlockVisibility();
+addSkinOverlay.classList.add('show');
+});
+
+addSkinCancel.addEventListener('click', () => {
+addSkinOverlay.classList.remove('show');
+});
+
+addSkinSave.addEventListener('click', () => {
+if (!tg || !tg.initData){
+addSkinStatus.textContent = errorMessage('unauthorized');
+return;
+}
+
+const title = sTitle.value.trim();
+const price = Number(sPrice.value);
+
+if (!title || !price || price <= 0){
+addSkinStatus.textContent = 'Заполни название и цену.';
+return;
+}
+
+addSkinSave.disabled = true;
+addSkinStatus.textContent = 'Публикую...';
+
+fetch(API_BASE + '/api/skins', {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({
+init_data: tg.initData,
+title: title,
+description: sDescription.value.trim(),
+price: price,
+photo_url: sPhoto.value.trim(),
+weapon_type: sWeaponType.value.trim(),
+wear: sWear.value,
+rarity: sRarity.value,
+float_value: sFloat.value ? Number(sFloat.value) : null,
+stattrak: sStattrak.checked,
+})
+})
+.then(async r => {
+if (!r.ok){
+const data = await r.json().catch(() => ({}));
+throw new Error(errorMessage(data.error));
+}
+return r.json();
+})
+.then(() => {
+addSkinStatus.textContent = 'Выставлено ✓';
+sTitle.value = '';
+sDescription.value = '';
+sPrice.value = '';
+sPhoto.value = '';
+sWeaponType.value = '';
+sWear.value = '';
+sRarity.value = '';
+sFloat.value = '';
+sStattrak.checked = false;
+loadSkins();
+setTimeout(() => {
+addSkinOverlay.classList.remove('show');
+addSkinStatus.textContent = '';
+}, 600);
+})
+.catch(err => {
+addSkinStatus.textContent = err.message;
+})
+.finally(() => {
+addSkinSave.disabled = false;
+});
+});
+
+// Магазин теперь главный экран — сразу подтягиваем баланс и каталог
+loadMe();
+loadSkins();
 </script>
 </body>
 </html>
